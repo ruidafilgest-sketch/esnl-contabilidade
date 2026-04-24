@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Documentos · ESNL Contabilidade</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+.layout{display:grid;grid-template-columns:240px 1fr;height:calc(100vh - 61px);overflow:hidden}
+.dsb{background:var(--navy2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto}
+.dsb::-webkit-scrollbar{width:0}
+.dsec{padding:12px 14px 6px}
+.dsec-tit{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--silver);margin-bottom:7px;opacity:.7}
+.ditem{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:8px;cursor:pointer;margin-bottom:2px;border:1px solid transparent;transition:all .2s}
+.ditem:hover{background:var(--surface);border-color:rgba(200,148,58,.1)}
+.ditem.active{background:var(--surface2);border-color:var(--gold)}
+.ditem-ico{font-size:15px;width:22px;text-align:center;flex-shrink:0}
+.ditem-nm{font-size:12px;font-weight:500;color:var(--text)}
+.ditem-sb{font-size:10px;color:var(--silver);margin-top:1px}
+.ddiv{height:1px;background:var(--border2);margin:6px 14px}
+.dmain{overflow-y:auto;background:var(--bg);display:flex;flex-direction:column}
+.dmain::-webkit-scrollbar{width:3px}
+.dtb{background:var(--navy2);border-bottom:1px solid var(--border2);padding:11px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.tsel{background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:6px 10px;font-size:12px;color:var(--text);font-family:Outfit,sans-serif;outline:none}
+.tsel:focus{border-color:var(--gold)}
+.darea{padding:20px 24px;flex:1;overflow-y:auto;max-width:820px;margin:0 auto;width:100%}
+.farea{padding:16px 20px;max-width:680px}
+.fsec{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:18px;margin-bottom:12px}
+.fshdr{display:flex;align-items:center;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border2)}
+.fsico{width:26px;height:26px;background:rgba(200,148,58,.1);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.fstit{font-family:Cormorant Garamond,serif;font-size:15px;font-weight:600;color:var(--text)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Documento renderizado */
+.rdoc{background:#fff;color:#1a1a2e;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.4);margin-bottom:16px}
+.rdoc-hdr{padding:26px 32px 20px;background:linear-gradient(135deg,#0b1426,#1a2a45);color:#fff;display:flex;align-items:flex-start;justify-content:space-between;gap:20px}
+.re{font-family:Cormorant Garamond,serif;font-size:18px;font-weight:700;color:#fff;line-height:1.2}
+.rnif{font-size:11px;color:rgba(255,255,255,.6);margin-top:3px}
+.rdtit{font-family:Cormorant Garamond,serif;font-size:22px;font-weight:700;color:#c8943a;margin-top:8px}
+.rdper{font-size:12px;color:rgba(255,255,255,.6);margin-top:3px}
+.rdmeta{font-size:11px;color:rgba(255,255,255,.5);line-height:1.8;text-align:right}
+.rdbody{padding:26px 32px;font-family:Cormorant Garamond,serif;font-size:14px;line-height:1.8;color:#1a1a2e}
+.rdbody h2{font-size:16px;font-weight:700;color:#0b1426;margin:20px 0 8px;padding-bottom:5px;border-bottom:2px solid #c8943a}
+.rdbody h3{font-size:14px;font-weight:600;color:#111d35;margin:14px 0 6px}
+.rdbody p{margin-bottom:8px;text-align:justify}
+.rdbody ul{margin:6px 0 8px 20px}
+.rdbody li{margin-bottom:4px}
+.rtab{width:100%;border-collapse:collapse;margin:10px 0;font-family:Outfit,sans-serif;font-size:12px}
+.rtab th{background:#0b1426;color:#fff;padding:7px 12px;text-align:left;font-weight:600;font-size:11px}
+.rtab th.r{text-align:right}
+.rtab td{padding:6px 12px;border-bottom:1px solid #e8ecf0;font-size:12px}
+.rtab td.r{text-align:right;font-family:JetBrains Mono,monospace}
+.rtab tr:nth-child(even) td{background:#f5f7fa}
+.rtab tr.rtot td{background:#0b1426;color:#fff;font-weight:700;border:none}
+.rtab tr.rtot td.r{font-family:JetBrains Mono,monospace}
+.assin{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:32px}
+.asl{text-align:center}
+.asline{border-top:1px solid #888;margin-bottom:5px;margin-top:32px}
+.asnm{font-size:12px;font-weight:600;color:#0b1426}
+.ascg{font-size:11px;color:#666}
+.rdfoot{padding:12px 32px;background:#f5f7fa;border-top:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#888;font-family:Outfit,sans-serif}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(200,148,58,.3);border-top-color:var(--gold);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media print{.sidebar,.topbar,.dsb,.dtb,.no-print{display:none!important}.layout{display:block}.rdoc{box-shadow:none;border-radius:0}body{background:#fff}}
+</style>
+</head>
+<body>
+
+<div class="app-layout">
+  <div id="sidebar-wrap"></div>
+  <div class="app-main">
+    <div class="topbar">
+      <span class="topbar-title">Documentos legais</span>
+      <div class="topbar-right">
+        <button class="btn-secondary no-print" style="font-size:12px;padding:6px 14px" onclick="window.print()">🖨 Imprimir / PDF</button>
+      </div>
+    </div>
+    <div class="layout">
+      <div class="dsb no-print">
+        <div class="dsec">
+          <div class="dsec-tit">Relatórios anuais</div>
+          <div class="ditem active" onclick="selDoc('rc',this)"><span class="ditem-ico">📋</span><div><div class="ditem-nm">Relatório e Contas</div><div class="ditem-sb">Documento completo AG</div></div></div>
+          <div class="ditem" onclick="selDoc('rg',this)"><span class="ditem-ico">📊</span><div><div class="ditem-nm">Relatório de Gestão</div><div class="ditem-sb">Narrativa e indicadores</div></div></div>
+        </div>
+        <div class="ddiv"></div>
+        <div class="dsec">
+          <div class="dsec-tit">Assembleia Geral</div>
+          <div class="ditem" onclick="selDoc('conv',this)"><span class="ditem-ico">📢</span><div><div class="ditem-nm">Convocatória</div><div class="ditem-sb">AG ordinária ou extraordinária</div></div></div>
+          <div class="ditem" onclick="selDoc('ata',this)"><span class="ditem-ico">📝</span><div><div class="ditem-nm">Ata da AG</div><div class="ditem-sb">Aprovação de contas</div></div></div>
+          <div class="ditem" onclick="selDoc('lp',this)"><span class="ditem-ico">✅</span><div><div class="ditem-nm">Lista de presenças</div><div class="ditem-sb">Assinatura dos presentes</div></div></div>
+        </div>
+        <div class="ddiv"></div>
+        <div class="dsec">
+          <div class="dsec-tit">Declarações AT</div>
+          <div class="ditem" onclick="selDoc('m22',this)"><span class="ditem-ico">🗂️</span><div><div class="ditem-nm">Modelo 22 IRC</div><div class="ditem-sb">Pré-preenchimento</div></div></div>
+          <div class="ditem" onclick="selDoc('ies',this)"><span class="ditem-ico">📁</span><div><div class="ditem-nm">IES / DA</div><div class="ditem-sb">Informação Empresarial</div></div></div>
+        </div>
+        <div class="ddiv"></div>
+        <div class="dsec">
+          <div class="dsec-tit">Contabilidade</div>
+          <div class="ditem" onclick="selDoc('anexos',this)"><span class="ditem-ico">📎</span><div><div class="ditem-nm">Anexos às DF</div><div class="ditem-sb">Notas às demonstrações</div></div></div>
+        </div>
+      </div>
+      <div class="dmain">
+        <div class="dtb no-print">
+          <select id="sel-ent" class="tsel" onchange="loadAndRender()"></select>
+          <select id="sel-ano" class="tsel" onchange="loadAndRender()"><option>2030</option>
+<option>2029</option>
+<option>2028</option>
+<option>2027</option>
+<option>2026</option>
+<option selected>2025</option>
+<option>2024</option>
+<option>2023</option>
+<option>2022</option>
+<option>2021</option>
+<option>2020</option></select>
+          <button class="btn-primary" style="font-size:12px;padding:7px 16px" onclick="loadAndRender()">↻ Gerar</button>
+        </div>
+        <div id="doc-content">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--silver);text-align:center;padding:40px">
+            <div style="font-size:40px;opacity:.2;margin-bottom:12px">📄</div>
+            <div style="font-family:Cormorant Garamond,serif;font-size:20px;color:var(--text2);margin-bottom:6px">Selecione um documento</div>
+            <div style="font-size:13px">Escolha o tipo na lista lateral</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── ESNL Contabilidade v2 · Firebase Core ─────────────────────────────────
+// © Rui Gonçalves · SNC-ESNL
+
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBBHAI-u6nuAcn2KWgoZwsavyXZY6o4JhA",
+  authDomain: "esnl-contabilidade.firebaseapp.com",
+  databaseURL: "https://esnl-contabilidade-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "esnl-contabilidade",
+  storageBucket: "esnl-contabilidade.firebasestorage.app",
+  messagingSenderId: "829122453343",
+  appId: "1:829122453343:web:7a516be90941a4761320ea"
+};
+
+const ADMIN_HASH = "21e0969c3460872a571aaa26f3873ebdc315c8e9d30668f39a47579c67c2b338";
+
+// Firebase SDK (v9 compat)
+let _db = null;
+let _fbReady = false;
+let _fbCallbacks = [];
+
+function onFirebaseReady(cb) {
+  if (_fbReady) { cb(); } else { _fbCallbacks.push(cb); }
+}
+
+function initFirebase() {
+  if (typeof firebase === 'undefined') { setTimeout(initFirebase, 100); return; }
+  if (_db) return;
+  try {
+    const app = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(FIREBASE_CONFIG);
+    _db = firebase.database(app);
+    _fbReady = true;
+    _fbCallbacks.forEach(function(cb){ cb(); });
+    _fbCallbacks = [];
+  } catch(e) { console.error('Firebase init error:', e); }
+}
+
+// ── AUTH ───────────────────────────────────────────────────────────────────
+function isLoggedIn() {
+  return sessionStorage.getItem('esnl_auth') === '1';
+}
+
+function login(password, cb) {
+  // SHA-256 da password
+  crypto.subtle.digest('SHA-256', new TextEncoder().encode(password))
+    .then(function(buf) {
+      var hash = Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+      if (hash === ADMIN_HASH) {
+        sessionStorage.setItem('esnl_auth', '1');
+        cb(true);
+      } else {
+        cb(false);
+      }
+    });
+}
+
+function logout() {
+  sessionStorage.removeItem('esnl_auth');
+  location.href = 'index.html';
+}
+
+function requireAuth() {
+  if (!isLoggedIn()) { location.href = 'index.html'; return false; }
+  return true;
+}
+
+// ── DATABASE ───────────────────────────────────────────────────────────────
+function dbRef(path) {
+  return _db ? _db.ref(path) : null;
+}
+
+function dbGet(path, cb) {
+  onFirebaseReady(function() {
+    _db.ref(path).once('value', function(snap) { cb(snap.val()); });
+  });
+}
+
+function dbSet(path, data, cb) {
+  onFirebaseReady(function() {
+    _db.ref(path).set(data, function(err) { if(cb) cb(err); });
+  });
+}
+
+function dbUpdate(path, data, cb) {
+  onFirebaseReady(function() {
+    _db.ref(path).update(data, function(err) { if(cb) cb(err); });
+  });
+}
+
+function dbRemove(path, cb) {
+  onFirebaseReady(function() {
+    _db.ref(path).remove(function(err) { if(cb) cb(err); });
+  });
+}
+
+function dbPush(path, data, cb) {
+  onFirebaseReady(function() {
+    var ref = _db.ref(path).push(data, function(err) { if(cb) cb(err, ref.key); });
+  });
+}
+
+// ── ENTIDADES ──────────────────────────────────────────────────────────────
+function getEntitiesLocal() {
+  try { return JSON.parse(localStorage.getItem('esnl_entities_cache') || '[]'); }
+  catch(e) { return []; }
+}
+
+function loadEntities(cb) {
+  dbGet('entidades', function(data) {
+    var arr = data ? Object.keys(data).map(function(k){ var e=data[k]; e.id=k; return e; }) : [];
+    arr.sort(function(a,b){ return (a.nome||'').localeCompare(b.nome||''); });
+    localStorage.setItem('esnl_entities_cache', JSON.stringify(arr));
+    cb(arr);
+  });
+}
+
+function saveEntity(entity, cb) {
+  var id = entity.id || _db.ref('entidades').push().key;
+  entity.id = id;
+  dbSet('entidades/' + id, entity, function(err) {
+    if (!err) {
+      var arr = getEntitiesLocal();
+      var idx = arr.findIndex(function(e){ return e.id===id; });
+      if (idx>=0) arr[idx]=entity; else arr.push(entity);
+      localStorage.setItem('esnl_entities_cache', JSON.stringify(arr));
+    }
+    if(cb) cb(err, id);
+  });
+}
+
+function getCurrentEntityId() {
+  return localStorage.getItem('esnl_current_entity') || '';
+}
+
+function setCurrentEntityId(id) {
+  localStorage.setItem('esnl_current_entity', id);
+}
+
+// ── DIÁRIO ─────────────────────────────────────────────────────────────────
+function loadDiario(entityId, ano, cb) {
+  dbGet('diario/' + entityId + '/' + ano, function(data) {
+    var arr = data ? Object.keys(data).map(function(k){ var l=data[k]; l.fbKey=k; return l; }) : [];
+    arr.sort(function(a,b){ return (b.data||'').localeCompare(a.data||''); });
+    cb(arr);
+  });
+}
+
+function saveLancamento(entityId, ano, lanc, cb) {
+  var path = 'diario/' + entityId + '/' + ano;
+  if (lanc.fbKey) {
+    dbSet(path + '/' + lanc.fbKey, lanc, cb);
+  } else {
+    dbPush(path, lanc, cb);
+  }
+}
+
+function deleteLancamento(entityId, ano, fbKey, cb) {
+  dbRemove('diario/' + entityId + '/' + ano + '/' + fbKey, cb);
+}
+
+// ── CÁLCULOS ───────────────────────────────────────────────────────────────
+function calcResultadoFromLancs(lancs) {
+  var rend=0, gasto=0, caixa=0, banco=0;
+  lancs.forEach(function(l) {
+    (l.movimentos||[]).forEach(function(m) {
+      var v = m.dc==='D' ? m.valor : -m.valor;
+      if (m.conta && m.conta.startsWith('11')) caixa += v;
+      if (m.conta && (m.conta.startsWith('12')||m.conta.startsWith('13'))) banco += v;
+      if (m.dc==='D' && m.tipo==='gasto') gasto += m.valor;
+      if (m.dc==='C' && m.tipo==='rendimento') rend += m.valor;
+    });
+  });
+  return { rend:rend, gasto:gasto, resultado:rend-gasto, caixa:Math.max(caixa,0), banco:Math.max(banco,0) };
+}
+
+// ── FORMATAÇÃO ─────────────────────────────────────────────────────────────
+function fmt(v) {
+  return parseFloat(v||0).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+function fmtDate(d) {
+  if(!d) return '';
+  var p=d.split('-'); return p[2]+'/'+p[1]+'/'+p[0];
+}
+function hojeISO() {
+  return new Date().toISOString().split('T')[0];
+}
+function hoje() {
+  return new Date().toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
+}
+
+// ── TOAST ──────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  var t=document.getElementById('_toast');
+  if(!t){
+    t=document.createElement('div');t.id='_toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;background:#1a2a45;border:1px solid #c8943a;border-radius:8px;padding:10px 16px;font-size:13px;color:#e8edf5;box-shadow:0 8px 24px rgba(0,0,0,.5);transform:translateY(20px);opacity:0;transition:all .3s;z-index:9999;pointer-events:none;font-family:Outfit,sans-serif;max-width:320px';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.borderColor=type==='error'?'#e05050':'#c8943a';
+  t.style.opacity='1';t.style.transform='translateY(0)';
+  clearTimeout(t._tmr);
+  t._tmr=setTimeout(function(){t.style.opacity='0';t.style.transform='translateY(20px)';},2800);
+}
+
+// ── SIDEBAR ────────────────────────────────────────────────────────────────
+var _NAV=[
+  {id:'dashboard', href:'dashboard.html', icon:'⊞',  label:'Dashboard'},
+  {id:'entidades', href:'entidades.html', icon:'🏛️', label:'Entidades'},
+  {id:'diario',    href:'diario.html',    icon:'📒',  label:'Diário'},
+  {id:'efatura',   href:'efatura.html',   icon:'📥',  label:'Importar eFatura'},
+  {id:'balancetes',href:'balancetes.html',icon:'📊',  label:'Balancetes'},
+  {id:'balanco',   href:'balanco.html',   icon:'⚖️',  label:'Balanço · DRN'},
+  {id:'documentos',href:'documentos.html',icon:'📄',  label:'Documentos'},
+];
+var _SECS=[
+  {label:'Principal',     ids:['dashboard']},
+  {label:'Contabilidade', ids:['entidades','diario','efatura']},
+  {label:'Relatórios',    ids:['balancetes','balanco']},
+  {label:'Documentos',    ids:['documentos']},
+];
+
+function buildSidebar(activeId) {
+  var entities = getEntitiesLocal();
+  var curId = getCurrentEntityId();
+  var curEnt = entities.find(function(e){return e.id===curId;}) || entities[0] || {sigla:'—',nif:''};
+  var html = '<div class="sidebar">'
+    +'<div class="sb-logo"><div class="sb-logo-icon">Σ</div>'
+    +'<div class="sb-logo-name">ESNL Contabilidade</div>'
+    +'<div class="sb-logo-sub">Gestão para associações</div></div>'
+    +'<div class="sb-entity" onclick="openEntitySwitcher()">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between">'
+    +'<div style="display:flex;align-items:center;gap:6px">'
+    +'<span class="sb-entity-dot"></span>'
+    +'<span class="sb-entity-name">'+(curEnt.sigla||curEnt.nome||'—')+'</span></div>'
+    +'<span style="font-size:10px;color:var(--silver)">▾</span></div>'
+    +'<div class="sb-entity-sub">NIF '+(curEnt.nif||'—')+'</div></div>'
+    +'<nav class="sb-nav">';
+  _SECS.forEach(function(sec){
+    html+='<div class="sb-section-label">'+sec.label+'</div>';
+    sec.ids.forEach(function(id){
+      var m=_NAV.find(function(x){return x.id===id;});
+      if(!m) return;
+      html+='<a href="'+m.href+'" class="nav-item'+(id===activeId?' active':'')+'">'
+        +'<span class="nav-icon">'+m.icon+'</span>'
+        +'<span class="nav-label">'+m.label+'</span></a>';
+    });
+  });
+  html+='</nav>'
+    +'<div class="sb-footer">'
+    +'<button onclick="logout()" style="background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:6px 12px;font-size:11px;color:var(--silver);cursor:pointer;width:100%;font-family:Outfit,sans-serif;transition:all .2s" onmouseover="this.style.borderColor=\'var(--red)\';this.style.color=\'var(--red)\'" onmouseout="this.style.borderColor=\'rgba(255,255,255,.08)\';this.style.color=\'var(--silver)\'">Terminar sessão</button>'
+    +'<div class="sb-footer-copy" style="margin-top:8px">© Rui Gonçalves · SNC-ESNL</div>'
+    +'</div></div>';
+  return html;
+}
+
+function openEntitySwitcher() {
+  if(document.getElementById('_es_ov')) return;
+  var entities=getEntitiesLocal();
+  var cur=getCurrentEntityId();
+  var html='<div id="_es_ov" onclick="if(event.target===this)closeEntitySwitcher()" style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-start;justify-content:flex-start;padding:70px 0 0 14px">'
+    +'<div style="background:#111d35;border:1px solid rgba(200,148,58,.18);border-radius:12px;width:320px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.6)">'
+    +'<div style="padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.06);font-family:Cormorant Garamond,serif;font-size:16px;font-weight:600;color:#e8edf5">Selecionar entidade</div>';
+  entities.forEach(function(e){
+    var sel=e.id===cur;
+    html+='<div onclick="switchEntity(\''+e.id+'\')" style="padding:11px 16px;cursor:pointer;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,.04);transition:background .15s;background:'+(sel?'rgba(200,148,58,.08)':'transparent')+';border-left:'+(sel?'2px solid #c8943a':'2px solid transparent')+'">'
+      +'<div style="width:34px;height:34px;border-radius:8px;background:#1a2a45;border:1px solid rgba(200,148,58,.2);display:flex;align-items:center;justify-content:center;font-family:Cormorant Garamond,serif;font-size:13px;font-weight:600;color:#e0a84a;flex-shrink:0">'+(e.sigla||e.nome.substring(0,2).toUpperCase())+'</div>'
+      +'<div><div style="font-size:13px;font-weight:500;color:#e8edf5">'+e.nome+'</div><div style="font-size:11px;color:#8a9ab5;margin-top:2px">NIF '+(e.nif||'—')+'</div></div></div>';
+  });
+  html+='<div onclick="location.href=\'entidades.html\'" style="padding:11px 16px;cursor:pointer;display:flex;align-items:center;gap:11px">'
+    +'<div style="width:34px;height:34px;border-radius:8px;background:rgba(200,148,58,.1);border:1px solid rgba(200,148,58,.3);display:flex;align-items:center;justify-content:center;font-size:18px;color:#e0a84a">+</div>'
+    +'<div style="font-size:13px;font-weight:500;color:#e0a84a">Nova associação</div></div>'
+    +'</div></div>';
+  document.body.insertAdjacentHTML('beforeend',html);
+}
+
+function closeEntitySwitcher(){var el=document.getElementById('_es_ov');if(el)el.remove();}
+
+function switchEntity(id){
+  setCurrentEntityId(id);
+  closeEntitySwitcher();
+  location.reload();
+}
+
+// ── CSS ────────────────────────────────────────────────────────────────────
+(function(){
+  if(document.getElementById('_esnl_css')) return;
+  var s=document.createElement('style');
+  s.id='_esnl_css';
+  s.textContent='@import url(\'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap\');'
+  +'*{box-sizing:border-box;margin:0;padding:0}'
+  +':root{'
+  +'--navy:#0b1426;--navy2:#111d35;--navy3:#1a2a45;--navy4:#243352;'
+  +'--gold:#c8943a;--gold2:#e0a84a;'
+  +'--silver:#8a9ab5;--silver2:#b0bfd4;'
+  +'--bg:#0d1829;--surface:#111d35;--surface2:#162038;--surface3:#1e2e4a;'
+  +'--text:#e8edf5;--text2:#a0b0c8;'
+  +'--red:#e05050;--green:#4ab87a;--amber:#e0a040;--blue:#4a90d9;'
+  +'--border:rgba(200,148,58,.18);--border2:rgba(255,255,255,.06);'
+  +'--radius:12px;--radius-sm:8px;}'
+  +'html,body{height:100%;background:var(--bg);color:var(--text);font-family:Outfit,sans-serif}'
+  +'a{text-decoration:none;color:inherit}'
+  +'.app-layout{display:grid;grid-template-columns:230px 1fr;min-height:100vh}'
+  +'.app-main{display:flex;flex-direction:column;min-height:100vh;overflow:hidden}'
+  +'.sidebar{background:var(--navy);border-right:1px solid var(--border);display:flex;flex-direction:column;height:100vh;position:sticky;top:0;overflow-y:auto}'
+  +'.sidebar::-webkit-scrollbar{width:0}'
+  +'.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(200,148,58,.12)}'
+  +'.sb-logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Cormorant Garamond,serif;font-size:20px;font-weight:700;color:var(--navy);margin-bottom:10px}'
+  +'.sb-logo-name{font-family:Cormorant Garamond,serif;font-size:17px;font-weight:600;line-height:1.2;color:var(--text)}'
+  +'.sb-logo-sub{font-size:10px;color:var(--silver);letter-spacing:1.2px;text-transform:uppercase;margin-top:2px}'
+  +'.sb-entity{padding:10px 14px;margin:10px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;transition:all .2s}'
+  +'.sb-entity:hover{border-color:rgba(200,148,58,.3)}'
+  +'.sb-entity-dot{width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;margin-right:6px}'
+  +'.sb-entity-name{font-size:12px;color:var(--text);font-weight:500}'
+  +'.sb-entity-sub{font-size:10px;color:var(--silver);margin-top:2px}'
+  +'.sb-nav{flex:1;padding:8px 0}'
+  +'.sb-section-label{font-size:9px;letter-spacing:1.8px;text-transform:uppercase;color:var(--silver);padding:10px 18px 4px;opacity:.7}'
+  +'.nav-item{display:flex;align-items:center;gap:10px;padding:9px 16px;cursor:pointer;transition:all .2s;border-left:2px solid transparent;margin:1px 0;color:var(--text2)}'
+  +'.nav-item:hover{background:rgba(255,255,255,.03);border-left-color:rgba(200,148,58,.3)}'
+  +'.nav-item.active{background:rgba(200,148,58,.08);border-left-color:var(--gold)}'
+  +'.nav-item.active .nav-label{color:var(--gold2);font-weight:500}'
+  +'.nav-icon{font-size:15px;width:20px;text-align:center;flex-shrink:0}'
+  +'.nav-label{font-size:13px}'
+  +'.sb-footer{padding:12px 14px;border-top:1px solid var(--border2)}'
+  +'.sb-footer-copy{font-size:10px;color:var(--silver);text-align:center;letter-spacing:.3px}'
+  +'.topbar{background:var(--navy2);border-bottom:1px solid var(--border2);padding:13px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}'
+  +'.topbar-title{font-family:Cormorant Garamond,serif;font-size:20px;font-weight:600;color:var(--text)}'
+  +'.topbar-right{display:flex;align-items:center;gap:8px}'
+  +'.finput{width:100%;background:var(--surface);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 12px;font-size:13px;color:var(--text);font-family:Outfit,sans-serif;outline:none;transition:all .2s}'
+  +'.finput:focus{border-color:var(--gold);background:var(--surface3);box-shadow:0 0 0 3px rgba(200,148,58,.08)}'
+  +'.finput::placeholder{color:rgba(138,154,181,.45)}'
+  +'select.finput option{background:var(--navy2)}'
+  +'textarea.finput{resize:vertical;line-height:1.6}'
+  +'.flabel{font-size:10px;font-weight:500;color:var(--silver2);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px;display:block}'
+  +'.fgroup{margin-bottom:12px}'
+  +'.btn-primary{background:var(--gold);color:var(--navy);border:none;border-radius:var(--radius-sm);padding:9px 20px;font-family:Outfit,sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:.3px}'
+  +'.btn-primary:hover{background:var(--gold2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(200,148,58,.3)}'
+  +'.btn-primary:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}'
+  +'.btn-secondary{background:transparent;color:var(--text2);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:9px 16px;font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;transition:all .2s}'
+  +'.btn-secondary:hover{border-color:rgba(255,255,255,.2);color:var(--text)}'
+  +'.btn-danger{background:transparent;color:var(--red);border:1px solid rgba(224,80,80,.25);border-radius:var(--radius-sm);padding:8px 16px;font-family:Outfit,sans-serif;font-size:13px;cursor:pointer;transition:all .2s}'
+  +'.btn-danger:hover{background:rgba(224,80,80,.08);border-color:var(--red)}'
+  +'.mono{font-family:JetBrains Mono,monospace}'
+  +'.val-pos{color:var(--green);font-family:JetBrains Mono,monospace}'
+  +'.val-neg{color:var(--red);font-family:JetBrains Mono,monospace}'
+  +'.val-neu{color:var(--text2);font-family:JetBrains Mono,monospace}'
+  +'@media print{.sidebar,.topbar,.no-print{display:none!important}.app-layout{display:block}body{background:#fff;color:#000}}';
+  var first=document.head.firstChild;
+  if(first) document.head.insertBefore(s,first); else document.head.appendChild(s);
+})();
+
+// Auto-init Firebase
+initFirebase();
+</script>
+<script>// ── PLANO DE CONTAS SNC-ESNL COMPLETO ─────────────────────────────────────
+// © Rui Gonçalves · NCRF-ESNL
+
+const PLANO_CONTAS = [
+  // CLASSE 1
+  {c:'11',n:'Caixa',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'111',n:'Caixa central',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'12',n:'Depósitos à ordem',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'121',n:'Depósitos à ordem — Banco 1',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'122',n:'Depósitos à ordem — Banco 2',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'13',n:'Outros depósitos bancários',t:'caixa',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  {c:'14',n:'Outros instrumentos financeiros',t:'ativo',cl:1,g:'Classe 1 — Meios financeiros líquidos'},
+  // CLASSE 2
+  {c:'21',n:'Clientes',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'211',n:'Clientes — gerais',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'22',n:'Fornecedores',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'221',n:'Fornecedores — gerais',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'23',n:'Pessoal',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'231',n:'Remunerações a pagar',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'232',n:'Adiantamentos ao pessoal',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'24',n:'Estado e outros entes públicos',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'241',n:'Imposto sobre o rendimento',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2411',n:'IRC estimado',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'242',n:'Retenção na fonte — IRS',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'243',n:'IVA',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2431',n:'IVA dedutível',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2432',n:'IVA liquidado',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2433',n:'IVA apuramento',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'245',n:'Segurança Social',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2451',n:'Segurança Social — entidade',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'2452',n:'Segurança Social — trabalhadores',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'251',n:'Financiamentos obtidos L/P',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'26',n:'Associados e membros',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'261',n:'Quotas a receber',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'262',n:'Adiantamentos de associados',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'27',n:'Outras contas a receber e a pagar',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'271',n:'Devedores e credores diversos',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'272',n:'Devedores por acréscimos de rendimentos',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'273',n:'Credores por acréscimos de gastos',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'274',n:'Rendimentos diferidos',t:'passivo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'275',n:'Gastos diferidos',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  {c:'278',n:'Outros devedores e credores',t:'ativo',cl:2,g:'Classe 2 — Contas a receber e a pagar'},
+  // CLASSE 3
+  {c:'31',n:'Compras',t:'gasto',cl:3,g:'Classe 3 — Inventários'},
+  {c:'32',n:'Mercadorias',t:'ativo',cl:3,g:'Classe 3 — Inventários'},
+  {c:'33',n:'Matérias-primas e de consumo',t:'ativo',cl:3,g:'Classe 3 — Inventários'},
+  // CLASSE 4
+  {c:'43',n:'Ativos fixos tangíveis',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'431',n:'Terrenos e recursos naturais',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'432',n:'Edifícios e outras construções',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'433',n:'Equipamento básico',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'434',n:'Equipamento de transporte',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'435',n:'Equipamento administrativo',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'436',n:'Outros ativos fixos tangíveis',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'438',n:'Depreciações acumuladas — AFT',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'44',n:'Ativos intangíveis',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'446',n:'Outros ativos intangíveis',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  {c:'448',n:'Amortizações acumuladas — AI',t:'ativo',cl:4,g:'Classe 4 — Investimentos'},
+  // CLASSE 5
+  {c:'51',n:'Fundos patrimoniais',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'511',n:'Fundo social',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'512',n:'Fundo de dotação',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'54',n:'Reservas',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'541',n:'Reservas legais',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'542',n:'Reservas estatutárias',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'551',n:'Resultados transitados',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  {c:'56',n:'Resultado líquido do período',t:'capital',cl:5,g:'Classe 5 — Fundos patrimoniais'},
+  // CLASSE 6
+  {c:'61',n:'Custo merc. vendidas e mat. consumidas',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'611',n:'Mercadorias',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'612',n:'Matérias consumidas',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'62',n:'Fornecimentos e serviços externos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'621',n:'Subcontratos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'622',n:'Serviços especializados',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6221',n:'Trabalhos especializados',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6222',n:'Publicidade e propaganda',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6223',n:'Vigilância e segurança',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6224',n:'Honorários',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6225',n:'Comissões',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6226',n:'Conservação e reparação',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'623',n:'Materiais',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6231',n:'Ferramentas e utensílios',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6232',n:'Livros e documentação técnica',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6233',n:'Material de escritório',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6234',n:'Artigos para oferta',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'624',n:'Energia e fluidos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6241',n:'Eletricidade',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6242',n:'Combustíveis',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6243',n:'Água',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'625',n:'Deslocações, estadas e transportes',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6251',n:'Deslocações e estadas',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6252',n:'Transportes de pessoal',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6253',n:'Transportes de mercadorias',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'626',n:'Serviços diversos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6261',n:'Rendas e alugueres',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6262',n:'Comunicação',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6263',n:'Seguros',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6264',n:'Contencioso e notariado',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6265',n:'Despesas de representação',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6266',n:'Limpeza, higiene e conforto',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6267',n:'Publicações',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'6268',n:'Outros serviços',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'63',n:'Gastos com pessoal',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'631',n:'Remunerações dos órgãos sociais',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'632',n:'Remunerações do pessoal',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'635',n:'Encargos sobre remunerações',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'636',n:'Seguros de acidentes de trabalho',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'637',n:'Gastos de ação social',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'638',n:'Outros gastos com pessoal',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'65',n:'Perdas por imparidade',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'67',n:'Provisões do período',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'68',n:'Outros gastos e perdas',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'681',n:'Impostos indiretos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'682',n:'Impostos diretos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'683',n:'Dívidas incobráveis',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'686',n:'Donativos e quotizações',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'688',n:'Outros gastos',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'69',n:'Gastos de financiamento',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'691',n:'Juros suportados',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  {c:'698',n:'Outros gastos de financiamento',t:'gasto',cl:6,g:'Classe 6 — Gastos'},
+  // CLASSE 7
+  {c:'71',n:'Vendas',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'711',n:'Vendas — Mercadorias',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'712',n:'Vendas — Produtos',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'72',n:'Prestações de serviços',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'721',n:'Prestações de serviços — gerais',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'75',n:'Subsídios, doações e legados',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'751',n:'Subsídios à exploração',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'752',n:'Donativos e legados à exploração',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'753',n:'Subsídios ao investimento',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'754',n:'Quotas de associados',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'755',n:'Patrocínios',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'756',n:'Donativos em espécie',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'76',n:'Reversões',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'78',n:'Outros rendimentos e ganhos',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'781',n:'Rendimentos suplementares',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'785',n:'Outros rendimentos',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'79',n:'Juros e rendimentos similares',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'791',n:'Juros obtidos',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  {c:'798',n:'Outros rendimentos financeiros',t:'rendimento',cl:7,g:'Classe 7 — Rendimentos'},
+  // CLASSE 8
+  {c:'81',n:'Resultado antes de impostos',t:'capital',cl:8,g:'Classe 8 — Resultados'},
+  {c:'82',n:'Imposto sobre o rendimento',t:'gasto',cl:8,g:'Classe 8 — Resultados'},
+  {c:'88',n:'Resultado líquido do período',t:'capital',cl:8,g:'Classe 8 — Resultados'},
+];
+
+// Mapeamento setor eFatura → conta SNC
+const SETOR_CONTA_MAP = {
+  'Comunicações':                 '6262',
+  'Electricidade':                '6241',
+  'Água':                         '6243',
+  'Combustíveis e outros produtos petrolíferos': '6242',
+  'Alojamento':                   '6251',
+  'Saúde':                        '636',
+  'Educação':                     '6268',
+  'Seguros':                      '6263',
+  'Restauração e similares':      '6268',
+  'Rendas':                       '6261',
+  'Serviços de construção civil': '6226',
+  'Serviços de informática':      '6221',
+  'Publicidade':                  '6222',
+  'Material de escritório':       '6233',
+  'Aquisição de passes mensais ou de bilhetes para utilização de transportes públicos coletivos': '6252',
+  'Outros':                       '6268',
+};
+
+function getContaByCode(code) {
+  return PLANO_CONTAS.find(c => c.c === code);
+}
+
+function searchContas(query) {
+  const q = query.toLowerCase().trim();
+  if (!q) return [];
+  return PLANO_CONTAS.filter(c =>
+    c.c.startsWith(q) || c.n.toLowerCase().includes(q)
+  ).slice(0, 40);
+}
+</script>
+<script>
+if(!requireAuth()) {}
+document.getElementById('sidebar-wrap').innerHTML = buildSidebar('documentos');
+
+var curDocType='rc', allLancs=[], curEnt={nome:'',nif:'',sigla:'',orgaos:[]};
+
+onFirebaseReady(function(){
+  loadEntities(function(arr){
+    var sel=document.getElementById('sel-ent');
+    var cur=getCurrentEntityId();
+    arr.forEach(function(e){
+      var o=document.createElement('option');
+      o.value=e.id;o.textContent=e.nome;
+      if(e.id===cur)o.selected=true;
+      sel.appendChild(o);
+    });
+    if(!cur&&arr.length)setCurrentEntityId(arr[0].id);
+    loadAndRender();
+  });
+});
+
+function selDoc(tipo,el){
+  curDocType=tipo;
+  document.querySelectorAll('.ditem').forEach(function(d){d.classList.remove('active');});
+  el.classList.add('active');
+  renderDoc();
+}
+
+function loadAndRender(){
+  var entId=document.getElementById('sel-ent').value;
+  var ano=document.getElementById('sel-ano').value;
+  setCurrentEntityId(entId);
+  var ents=getEntitiesLocal();
+  curEnt=ents.find(function(e){return e.id===entId;})||{nome:'Associação',nif:'—',sigla:'—',orgaos:[]};
+  document.getElementById('doc-content').innerHTML='<div style="text-align:center;padding:60px;color:var(--silver)"><span class="spin"></span>A carregar dados...</div>';
+  loadDiario(entId,ano,function(lancs){
+    allLancs=lancs;
+    renderDoc();
+  });
+}
+
+function renderDoc(){
+  var ano=document.getElementById('sel-ano').value;
+  var anoPrev=String(parseInt(ano)-1);
+  var res=calcResultadoFromLancs(allLancs);
+  var rend=res.rend,gasto=res.gasto,resultado=res.resultado;
+  var caixa=res.caixa,banco=res.banco;
+
+  // Detalhe por conta
+  var gastoD={},rendD={};
+  allLancs.forEach(function(l){
+    (l.movimentos||[]).forEach(function(m){
+      if(m.dc==='D'&&m.tipo==='gasto'){gastoD[m.nome||m.conta]=(gastoD[m.nome||m.conta]||0)+m.valor;}
+      if(m.dc==='C'&&m.tipo==='rendimento'){rendD[m.nome||m.conta]=(rendD[m.nome||m.conta]||0)+m.valor;}
+    });
+  });
+
+  var e=curEnt;
+  var pres=e.presidente||(e.orgaos||[]).find(function(o){return o.cargo==='Presidente';})||{};
+  var pMAG=(e.orgaos||[]).find(function(o){return o.cargo==='Presidente da Mesa AG';})||{};
+  var secMAG=(e.orgaos||[]).find(function(o){return o.cargo==='Secretário da Mesa AG';})||{};
+  var presNm=typeof pres==='string'?pres:(pres.nome||'________________________');
+  var pMAGnm=pMAG.nome||'________________________';
+  var secMAGnm=secMAG.nome||'________________________';
+
+  function hdr(titulo,subtitulo){
+    return '<div class="rdoc"><div class="rdoc-hdr">'
+      +'<div><div class="re">'+e.nome+'</div><div class="rnif">NIF '+(e.nif||'—')+'</div>'
+      +'<div class="rdtit">'+titulo+'</div><div class="rdper">'+subtitulo+'</div></div>'
+      +'<div class="rdmeta">SNC-ESNL / NCRF-ESNL<br>'+new Date().toLocaleDateString('pt-PT')+'<br>Exercício '+ano+'<br>© Rui Gonçalves</div>'
+      +'</div><div class="rdbody">';
+  }
+  function ftr(sigs){
+    sigs=sigs||[{nm:presNm,cg:'Presidente da Direção'},{nm:pMAGnm,cg:'Presidente da Mesa da AG'},{nm:'________________________',cg:'Tesoureiro'}];
+    return '</div>'
+      +'<div class="assin" style="padding:0 32px 24px;background:#fff">'
+      +sigs.map(function(s){return '<div class="asl"><div class="asline"></div><div class="asnm">'+(s.nm||'________________________')+'</div><div class="ascg">'+s.cg+'</div></div>';}).join('')
+      +'</div>'
+      +'<div class="rdfoot"><span>'+e.nome+'</span><span>© Rui Gonçalves · SNC-ESNL</span><span>Exercício '+ano+'</span></div>'
+      +'</div>';
+  }
+  function fmtV(v){return parseFloat(v||0).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2});}
+
+  var html='';
+
+  if(curDocType==='rc'){
+    html=hdr('RELATÓRIO E CONTAS '+ano,'Exercício findo em 31 de dezembro de '+ano)
+      +'<h2>1. Identificação da entidade</h2>'
+      +'<p><b>Denominação:</b> '+e.nome+'<br><b>NIF:</b> '+(e.nif||'—')+'<br><b>Sede:</b> '+(e.sede||e.distrito||'—')+'<br><b>Norma contabilística:</b> SNC-ESNL / NCRF-ESNL</p>'
+      +'<h2>2. Órgãos sociais</h2>'
+      +'<table class="rtab"><thead><tr><th>Órgão</th><th>Cargo</th><th>Nome</th></tr></thead><tbody>'
+      +(e.orgaos||[]).map(function(o){return '<tr><td>—</td><td>'+o.cargo+'</td><td>'+o.nome+'</td></tr>';}).join('')
+      +'</tbody></table>'
+      +'<h2>3. Relatório de atividades</h2>'
+      +'<p>No exercício de '+ano+', a '+e.nome+' desenvolveu as suas atividades em conformidade com os estatutos e objetivos da associação, prosseguindo a sua missão.</p>'
+      +'<h2>4. Demonstração de resultados resumida</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">'+ano+'</th></tr></thead><tbody>'
+      +'<tr><td>Total rendimentos</td><td class="r" style="color:#0f6e56">'+fmtV(rend)+' €</td></tr>'
+      +'<tr><td>Total gastos</td><td class="r" style="color:#993c1d">'+fmtV(gasto)+' €</td></tr>'
+      +'<tr class="rtot"><td>RESULTADO DO EXERCÍCIO</td><td class="r">'+fmtV(resultado)+' €</td></tr>'
+      +'</tbody></table>'
+      +'<h2>5. Detalhe de rendimentos</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">Valor €</th><th class="r">%</th></tr></thead><tbody>'
+      +Object.entries(rendD).map(function(kv){return '<tr><td>'+kv[0]+'</td><td class="r">'+fmtV(kv[1])+'</td><td class="r">'+(rend>0?fmtV(kv[1]/rend*100):'0,00')+'%</td></tr>';}).join('')
+      +'<tr class="rtot"><td>Total</td><td class="r">'+fmtV(rend)+'</td><td class="r">100,00%</td></tr>'
+      +'</tbody></table>'
+      +'<h2>6. Detalhe de gastos</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">Valor €</th><th class="r">%</th></tr></thead><tbody>'
+      +Object.entries(gastoD).map(function(kv){return '<tr><td>'+kv[0]+'</td><td class="r">'+fmtV(kv[1])+'</td><td class="r">'+(gasto>0?fmtV(kv[1]/gasto*100):'0,00')+'%</td></tr>';}).join('')
+      +'<tr class="rtot"><td>Total</td><td class="r">'+fmtV(gasto)+'</td><td class="r">100,00%</td></tr>'
+      +'</tbody></table>'
+      +'<h2>7. Posição financeira</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">'+ano+' €</th></tr></thead><tbody>'
+      +'<tr><td>Caixa</td><td class="r">'+fmtV(caixa)+'</td></tr>'
+      +'<tr><td>Depósitos bancários</td><td class="r">'+fmtV(banco)+'</td></tr>'
+      +'<tr class="rtot"><td>Total meios financeiros</td><td class="r">'+fmtV(caixa+banco)+'</td></tr>'
+      +'</tbody></table>'
+      +'<h2>8. Proposta de aplicação do resultado</h2>'
+      +'<p>'+(resultado>=0?'O excedente do exercício de '+fmtV(resultado)+' € é proposto para incorporação em Resultados Transitados.':'O défice do exercício de '+fmtV(Math.abs(resultado))+' € será coberto por Resultados Transitados de exercícios anteriores.')+'</p>'
+      +ftr();
+  } else if(curDocType==='rg'){
+    html=hdr('RELATÓRIO DE GESTÃO '+ano,'Aprovado em Assembleia Geral · Exercício '+ano)
+      +'<h2>Análise financeira do exercício</h2>'
+      +'<p>O exercício de '+ano+' encerrou com um '+(resultado>=0?'excedente':'défice')+' de <b>'+fmtV(Math.abs(resultado))+' €</b>, com rendimentos totais de <b>'+fmtV(rend)+' €</b> e gastos totais de <b>'+fmtV(gasto)+' €</b>.</p>'
+      +'<h3>Indicadores-chave</h3>'
+      +'<table class="rtab"><thead><tr><th>Indicador</th><th class="r">Valor</th></tr></thead><tbody>'
+      +'<tr><td>Cobertura de gastos por rendimentos</td><td class="r">'+(gasto>0?fmtV(rend/gasto*100):'—')+'%</td></tr>'
+      +'<tr><td>Liquidez imediata (Caixa + Banco)</td><td class="r">'+fmtV(caixa+banco)+' €</td></tr>'
+      +'<tr><td>Resultado do exercício</td><td class="r" style="color:'+(resultado>=0?'#0f6e56':'#993c1d')+'">'+fmtV(resultado)+' €</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Perspetivas</h2>'
+      +'<p>A Direção propõe a manutenção da política de contenção de gastos e o reforço das fontes de rendimento para o exercício seguinte.</p>'
+      +ftr();
+  } else if(curDocType==='conv'){
+    html='<div class="farea"><div class="fsec"><div class="fshdr"><div class="fsico">📢</div><div class="fstit">Configurar convocatória</div></div>'
+      +'<div class="fgroup"><label class="flabel">Tipo</label><select class="finput" id="cv-tipo"><option>Ordinária</option><option>Extraordinária</option></select></div>'
+      +'<div class="g2"><div class="fgroup"><label class="flabel">Data</label><input class="finput" type="date" id="cv-data" value="'+hojeISO()+'"></div>'
+      +'<div class="fgroup"><label class="flabel">Hora (2ª conv.)</label><input class="finput" type="time" id="cv-hora" value="21:00"></div></div>'
+      +'<div class="fgroup"><label class="flabel">Local</label><input class="finput" id="cv-local" value="Sede da associação"></div>'
+      +'<div class="fgroup"><label class="flabel">Ordem de trabalhos (um ponto por linha)</label>'
+      +'<textarea class="finput" id="cv-ot" rows="5">Verificação do quórum e abertura da sessão\nLeitura e aprovação da ata anterior\nApresentação e aprovação do Relatório e Contas '+ano+'\nApresentação e aprovação do Orçamento '+String(parseInt(ano)+1)+'\nAssuntos gerais</textarea></div>'
+      +'<button class="btn-primary" style="width:100%" onclick="gerarConv()">Gerar convocatória</button>'
+      +'</div></div><div id="conv-res"></div>';
+  } else if(curDocType==='ata'){
+    html='<div class="farea"><div class="fsec"><div class="fshdr"><div class="fsico">📝</div><div class="fstit">Configurar ata</div></div>'
+      +'<div class="g2"><div class="fgroup"><label class="flabel">Data</label><input class="finput" type="date" id="ata-data" value="'+hojeISO()+'"></div>'
+      +'<div class="fgroup"><label class="flabel">Hora</label><input class="finput" type="time" id="ata-hora" value="21:00"></div></div>'
+      +'<div class="fgroup"><label class="flabel">Local</label><input class="finput" id="ata-local" value="Sede da associação"></div>'
+      +'<div class="fgroup"><label class="flabel">N.º sócios presentes</label><input class="finput" type="number" id="ata-soc" value="15"></div>'
+      +'<div class="fgroup"><label class="flabel">Deliberações</label>'
+      +'<textarea class="finput" id="ata-delib" rows="4">Relatório e Contas '+ano+' aprovado por unanimidade\nOrçamento '+String(parseInt(ano)+1)+' aprovado por unanimidade\nResultado '+(resultado>=0?'excedente':'défice')+' de '+fmtV(Math.abs(resultado))+' € deliberado incorporar em resultados transitados</textarea></div>'
+      +'<button class="btn-primary" style="width:100%" onclick="gerarAta()">Gerar ata</button>'
+      +'</div></div><div id="ata-res"></div>';
+  } else if(curDocType==='lp'){
+    html=hdr('LISTA DE PRESENÇAS','Assembleia Geral · Exercício '+ano)
+      +'<p style="margin-bottom:14px">Assembleia Geral realizada em _____________ de '+ano+', pelas ______ horas.</p>'
+      +'<table class="rtab"><thead><tr><th style="width:40px">N.º</th><th>Nome do associado</th><th style="width:120px">N.º sócio</th><th style="width:140px">Assinatura</th></tr></thead><tbody>'
+      +Array.from({length:20},function(_,i){return '<tr><td>'+(i+1)+'</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td></tr>';}).join('')
+      +'</tbody></table>'
+      +ftr([{nm:pMAGnm,cg:'Presidente da Mesa da AG'},{nm:secMAGnm,cg:'Secretário da Mesa da AG'}]);
+  } else if(curDocType==='m22'){
+    html=hdr('MODELO 22 IRC — CHECKLIST','Exercício '+ano+' · Prazo: 31 de maio de '+String(parseInt(ano)+1))
+      +'<div style="background:rgba(200,148,58,.1);border-left:3px solid #c8943a;padding:9px 12px;border-radius:0 6px 6px 0;margin-bottom:14px;font-size:13px">Pré-preenchimento de apoio. Submissão no Portal das Finanças em e-balcão / IRC.</div>'
+      +'<h2>Identificação</h2>'
+      +'<table class="rtab"><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>'
+      +'<tr><td>Sujeito passivo</td><td>'+e.nome+'</td></tr>'
+      +'<tr><td>NIF</td><td>'+(e.nif||'—')+'</td></tr>'
+      +'<tr><td>Período</td><td>01/01/'+ano+' a 31/12/'+ano+'</td></tr>'
+      +'<tr><td>Regime</td><td>Entidade sem fins lucrativos — isenção art.º 10.º CIRC</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Quadro 07 — Apuramento</h2>'
+      +'<table class="rtab"><thead><tr><th>Campo</th><th>Descrição</th><th class="r">Valor €</th></tr></thead><tbody>'
+      +'<tr><td>201</td><td>Resultado contabilístico</td><td class="r">'+fmtV(resultado)+'</td></tr>'
+      +'<tr><td>215</td><td>Rendimentos isentos</td><td class="r">'+fmtV(rend)+'</td></tr>'
+      +'<tr class="rtot"><td colspan="2">Matéria coletável</td><td class="r">0,00</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Verificações</h2><ul>'
+      +'<li>✓ Confirmar isenção IRC ao abrigo do art.º 10.º do CIRC</li>'
+      +'<li>✓ Verificar se há rendimentos sujeitos a tributação</li>'
+      +'<li>✓ Relatório e Contas aprovado em AG antes da submissão</li>'
+      +'<li>✓ Prazo: 31 de maio de '+String(parseInt(ano)+1)+'</li>'
+      +'</ul>'+ftr([{nm:presNm,cg:'Presidente da Direção'},{nm:'________________________',cg:'Contabilista Certificado'}]);
+  } else if(curDocType==='ies'){
+    html=hdr('IES — INFORMAÇÃO EMPRESARIAL SIMPLIFICADA','Exercício '+ano+' · Prazo: 15 de julho de '+String(parseInt(ano)+1))
+      +'<div style="background:rgba(200,148,58,.1);border-left:3px solid #c8943a;padding:9px 12px;border-radius:0 6px 6px 0;margin-bottom:14px;font-size:13px">Pré-preenchimento de apoio. Submissão via Portal das Finanças — IES/DA.</div>'
+      +'<h2>Identificação</h2>'
+      +'<table class="rtab"><thead><tr><th>Campo</th><th>Valor</th></tr></thead><tbody>'
+      +'<tr><td>NIF</td><td>'+(e.nif||'—')+'</td></tr>'
+      +'<tr><td>Denominação</td><td>'+e.nome+'</td></tr>'
+      +'<tr><td>Período</td><td>'+ano+'</td></tr>'
+      +'<tr><td>Norma</td><td>SNC-ESNL (NCRF-ESNL)</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Anexo A — Demonstrações financeiras</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">Valor €</th></tr></thead><tbody>'
+      +'<tr><td>Total rendimentos e ganhos</td><td class="r">'+fmtV(rend)+'</td></tr>'
+      +'<tr><td>Total gastos e perdas</td><td class="r">'+fmtV(gasto)+'</td></tr>'
+      +'<tr><td>Resultado líquido do período</td><td class="r" style="color:'+(resultado>=0?'#0f6e56':'#993c1d')+'">'+fmtV(resultado)+'</td></tr>'
+      +'<tr><td>Meios financeiros líquidos</td><td class="r">'+fmtV(caixa+banco)+'</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Verificações</h2><ul>'
+      +'<li>✓ IES deve ser entregue mesmo que a entidade esteja isenta de IRC</li>'
+      +'<li>✓ Confirmar que o Balanço e DRN estão corretos</li>'
+      +'<li>✓ Prazo: 15 de julho de '+String(parseInt(ano)+1)+'</li>'
+      +'</ul>'+ftr([{nm:presNm,cg:'Presidente da Direção'},{nm:'________________________',cg:'Contabilista Certificado'}]);
+  } else if(curDocType==='anexos'){
+    html=hdr('ANEXO ÀS DEMONSTRAÇÕES FINANCEIRAS','Exercício findo em 31 de dezembro de '+ano)
+      +'<h2>Nota 1 — Base de preparação</h2>'
+      +'<p>As presentes demonstrações financeiras foram preparadas em conformidade com o <b>SNC-ESNL</b>, aprovado pelo Decreto-Lei n.º 36-A/2011, de 9 de março.</p>'
+      +'<h2>Nota 2 — Políticas contabilísticas</h2>'
+      +'<h3>2.1 Ativos fixos tangíveis</h3><p>Mensurados ao custo de aquisição deduzido das depreciações acumuladas. Depreciações pelo método das quotas constantes.</p>'
+      +'<h3>2.2 Rédito</h3><p>Rendimentos reconhecidos pelo princípio da especialização dos exercícios.</p>'
+      +'<h3>2.3 Quotas de associados</h3><p>Registadas como rendimento no período a que respeitam.</p>'
+      +'<h2>Nota 3 — Meios financeiros líquidos</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">'+ano+' €</th></tr></thead><tbody>'
+      +'<tr><td>Caixa</td><td class="r">'+fmtV(caixa)+'</td></tr>'
+      +'<tr><td>Depósitos à ordem</td><td class="r">'+fmtV(banco)+'</td></tr>'
+      +'<tr class="rtot"><td>Total</td><td class="r">'+fmtV(caixa+banco)+'</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Nota 4 — Rendimentos por natureza</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">Valor €</th></tr></thead><tbody>'
+      +Object.entries(rendD).map(function(kv){return '<tr><td>'+kv[0]+'</td><td class="r">'+fmtV(kv[1])+'</td></tr>';}).join('')
+      +'<tr class="rtot"><td>Total</td><td class="r">'+fmtV(rend)+'</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Nota 5 — Gastos por natureza</h2>'
+      +'<table class="rtab"><thead><tr><th>Rubrica</th><th class="r">Valor €</th></tr></thead><tbody>'
+      +Object.entries(gastoD).map(function(kv){return '<tr><td>'+kv[0]+'</td><td class="r">'+fmtV(kv[1])+'</td></tr>';}).join('')
+      +'<tr class="rtot"><td>Total</td><td class="r">'+fmtV(gasto)+'</td></tr>'
+      +'</tbody></table>'
+      +'<h2>Nota 6 — Eventos subsequentes</h2>'
+      +'<p>Não ocorreram eventos subsequentes à data de fecho suscetíveis de influenciar as demonstrações financeiras.</p>'
+      +ftr();
+  }
+
+  document.getElementById('doc-content').innerHTML='<div class="darea">'+html+'</div>';
+}
+
+function gerarConv(){
+  var tipo=document.getElementById('cv-tipo').value;
+  var data=document.getElementById('cv-data').value;
+  var hora=document.getElementById('cv-hora').value;
+  var local=document.getElementById('cv-local').value;
+  var ot=document.getElementById('cv-ot').value.split('\n').filter(function(l){return l.trim();});
+  var dataFmt=new Date(data).toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
+  var ano=document.getElementById('sel-ano').value;
+  var e=curEnt;
+  var pMAG=(e.orgaos||[]).find(function(o){return o.cargo==='Presidente da Mesa AG';})||{};
+  var html='<div class="rdoc"><div class="rdoc-hdr">'
+    +'<div><div class="re">'+e.nome+'</div><div class="rnif">NIF '+(e.nif||'—')+'</div>'
+    +'<div class="rdtit">CONVOCATÓRIA</div><div class="rdper">Assembleia Geral '+tipo+' · '+dataFmt+'</div></div>'
+    +'<div class="rdmeta">'+new Date().toLocaleDateString('pt-PT')+'<br>© Rui Gonçalves</div></div>'
+    +'<div class="rdbody">'
+    +'<p>Por determinação do <b>Presidente da Mesa da Assembleia Geral</b>, fica convocada a Assembleia Geral '+tipo+' da <b>'+e.nome+'</b>, a realizar no dia <b>'+dataFmt+'</b>, pelas <b>'+hora+'</b>, no <b>'+local+'</b>, para deliberar sobre a seguinte:</p>'
+    +'<h2>Ordem de trabalhos</h2>'
+    +'<ol style="margin:10px 0 10px 20px">'+ot.map(function(p){return '<li style="margin-bottom:6px">'+p+'</li>';}).join('')+'</ol>'
+    +'<p>Podem participar todos os associados em situação regular, nos termos dos Estatutos.</p>'
+    +'<p style="margin-top:16px">Vizela, '+hoje()+'</p><br>'
+    +'<p>O Presidente da Mesa da Assembleia Geral</p><br><br>'
+    +'<p>___________________________________<br>'+(pMAG.nome||'________________________')+'</p>'
+    +'</div><div class="rdfoot"><span>'+e.nome+'</span><span>© Rui Gonçalves</span></div></div>';
+  document.getElementById('conv-res').innerHTML=html;
+}
+
+function gerarAta(){
+  var data=document.getElementById('ata-data').value;
+  var hora=document.getElementById('ata-hora').value;
+  var local=document.getElementById('ata-local').value;
+  var soc=document.getElementById('ata-soc').value;
+  var delib=document.getElementById('ata-delib').value.split('\n').filter(function(l){return l.trim();});
+  var dataFmt=new Date(data).toLocaleDateString('pt-PT',{day:'numeric',month:'long',year:'numeric'});
+  var e=curEnt;
+  var pMAG=(e.orgaos||[]).find(function(o){return o.cargo==='Presidente da Mesa AG';})||{};
+  var secMAG=(e.orgaos||[]).find(function(o){return o.cargo==='Secretário da Mesa AG';})||{};
+  var html='<div class="rdoc"><div class="rdoc-hdr">'
+    +'<div><div class="re">'+e.nome+'</div><div class="rnif">NIF '+(e.nif||'—')+'</div>'
+    +'<div class="rdtit">ATA DA ASSEMBLEIA GERAL</div><div class="rdper">Sessão ordinária · '+dataFmt+'</div></div>'
+    +'<div class="rdmeta">'+new Date().toLocaleDateString('pt-PT')+'<br>© Rui Gonçalves</div></div>'
+    +'<div class="rdbody">'
+    +'<p>Aos <b>'+dataFmt+'</b>, pelas <b>'+hora+'</b>, no <b>'+local+'</b>, reuniu a Assembleia Geral da <b>'+e.nome+'</b>, NIF '+(e.nif||'—')+', sob a presidência de <b>'+(pMAG.nome||'o Presidente da Mesa')+'</b>, com a presença de <b>'+soc+' sócios</b>.</p>'
+    +'<h2>Deliberações</h2>'
+    +'<ol style="margin:10px 0 10px 20px">'+delib.map(function(d,i){return '<li style="margin-bottom:8px"><b>Ponto '+(i+1)+':</b> '+d+'.</li>';}).join('')+'</ol>'
+    +'<p>Não havendo mais assuntos, o Presidente declarou encerrada a reunião, da qual se lavrou a presente ata.</p>'
+    +'<p style="margin-top:16px">Vizela, '+hoje()+'</p>'
+    +'</div>'
+    +'<div class="assin" style="padding:0 32px 24px;background:#fff">'
+    +'<div class="asl"><div class="asline"></div><div class="asnm">'+(pMAG.nome||'________________________')+'</div><div class="ascg">Presidente da Mesa da AG</div></div>'
+    +'<div class="asl"><div class="asline"></div><div class="asnm">'+(secMAG.nome||'________________________')+'</div><div class="ascg">Secretário da Mesa da AG</div></div>'
+    +'</div>'
+    +'<div class="rdfoot"><span>'+e.nome+'</span><span>© Rui Gonçalves</span></div></div>';
+  document.getElementById('ata-res').innerHTML=html;
+}
+</script>
+</body>
+</html>
