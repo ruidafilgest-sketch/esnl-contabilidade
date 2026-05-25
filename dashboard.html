@@ -566,7 +566,6 @@ function searchContas(query) {
 <script>
 
 if(!requireAuth()) {}
-document.getElementById('sidebar-wrap').innerHTML = buildSidebar('dashboard');
 
 function loadDash() {
   var ano = document.getElementById('sel-ano').value;
@@ -574,9 +573,11 @@ function loadDash() {
   if (!entities.length) {
     loadEntities(function(arr) {
       if (arr.length && !getCurrentEntityId()) setCurrentEntityId(arr[0].id);
+      document.getElementById('sidebar-wrap').innerHTML = buildSidebar('dashboard');
       renderDash(arr, ano);
     });
   } else {
+    document.getElementById('sidebar-wrap').innerHTML = buildSidebar('dashboard');
     renderDash(entities, ano);
   }
 }
@@ -646,7 +647,9 @@ function renderDash(entities, ano) {
 onFirebaseReady(function() {
   loadEntities(function(arr) {
     if (arr.length && !getCurrentEntityId()) setCurrentEntityId(arr[0].id);
-    loadDash();
+    var ano = document.getElementById('sel-ano').value;
+    document.getElementById('sidebar-wrap').innerHTML = buildSidebar('dashboard');
+    renderDash(arr, ano);
   });
 });
 
