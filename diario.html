@@ -118,7 +118,7 @@
               <div class="fgroup" style="margin:0"><label class="flabel">Conta</label>
                 <div class="cwrap">
                   <input class="finput" id="deb-s" placeholder="Código ou descrição..." autocomplete="off"
-                    oninput="doSearch('deb',this.value)" onfocus="openCD('deb')" onblur="closeCD('deb')">
+                    oninput="doSearch('deb',this.value)" onfocus="openCD('deb')" onblur="closeCD('deb')" onkeydown="pickOnEnter(event,'deb')">
                   <div class="cdrop" id="deb-d"></div>
                 </div>
               </div>
@@ -133,7 +133,7 @@
               <div class="fgroup" style="margin:0"><label class="flabel">Conta</label>
                 <div class="cwrap">
                   <input class="finput" id="crd-s" placeholder="Código ou descrição..." autocomplete="off"
-                    oninput="doSearch('crd',this.value)" onfocus="openCD('crd')" onblur="closeCD('crd')">
+                    oninput="doSearch('crd',this.value)" onfocus="openCD('crd')" onblur="closeCD('crd')" onkeydown="pickOnEnter(event,'crd')">
                   <div class="cdrop" id="crd-d"></div>
                 </div>
               </div>
@@ -706,11 +706,14 @@ function getContaByCode(code) {
   return PLANO_CONTAS.find(c => c.c === code);
 }
 
+function _semAcentos(s){
+  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function searchContas(query) {
-  const q = query.toLowerCase().trim();
+  const q = _semAcentos(query.toLowerCase().trim());
   if (!q) return [];
   return PLANO_CONTAS.filter(c =>
-    c.c.startsWith(q) || c.n.toLowerCase().includes(q)
+    c.c.startsWith(q) || _semAcentos(c.n.toLowerCase()).includes(q)
   ).slice(0, 40);
 }
 </script>
@@ -782,6 +785,16 @@ function doSearch(side,q){
       +'<span class="cdt '+c.t+'">'+c.t+'</span></div>';
   });
   drop.innerHTML=html; drop.style.display='block';
+}
+function pickOnEnter(ev,side){
+  if(ev.key!=='Enter') return;
+  ev.preventDefault();
+  var q=document.getElementById(side+'-s').value;
+  var res=searchContas(q);
+  if(res.length){
+    var c=res[0];
+    selC(side,c.c,c.n,c.t);
+  }
 }
 function openCD(s){doSearch(s,document.getElementById(s+'-s').value);}
 function closeCD(s){setTimeout(function(){document.getElementById(s+'-d').style.display='none';},200);}
