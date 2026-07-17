@@ -103,7 +103,7 @@
       </div>
       <div class="dmain">
         <div class="dtb no-print">
-          <select id="sel-ent" class="tsel" onchange="loadAndRender()"></select>
+          <select id="sel-ent" class="tsel" onchange="onEntChangeReport(this.value)"></select>
           <select id="sel-ano" class="tsel" onchange="loadAndRender()"><option>2030</option>
 <option>2029</option>
 <option>2028</option>
@@ -654,11 +654,14 @@ function getContaByCode(code) {
   return PLANO_CONTAS.find(c => c.c === code);
 }
 
+function _semAcentos(s){
+  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function searchContas(query) {
-  const q = query.toLowerCase().trim();
+  const q = _semAcentos(query.toLowerCase().trim());
   if (!q) return [];
   return PLANO_CONTAS.filter(c =>
-    c.c.startsWith(q) || c.n.toLowerCase().includes(q)
+    c.c.startsWith(q) || _semAcentos(c.n.toLowerCase()).includes(q)
   ).slice(0, 40);
 }
 </script>
@@ -678,7 +681,9 @@ onFirebaseReady(function(){
       if(e.id===cur)o.selected=true;
       sel.appendChild(o);
     });
-    if(!cur&&arr.length)setCurrentEntityId(arr[0].id);
+    if(!cur&&arr.length){cur=arr[0].id;setCurrentEntityId(arr[0].id);}
+    var savedAno=localStorage.getItem('esnl_diario_ano_'+cur);
+    if(savedAno) document.getElementById('sel-ano').value=savedAno;
     loadAndRender();
   });
 });
@@ -690,9 +695,17 @@ function selDoc(tipo,el){
   renderDoc();
 }
 
+function onEntChangeReport(ent){
+  setCurrentEntityId(ent);
+  var savedAno=localStorage.getItem('esnl_diario_ano_'+ent);
+  if(savedAno) document.getElementById('sel-ano').value=savedAno;
+  loadAndRender();
+}
+
 function loadAndRender(){
   var entId=document.getElementById('sel-ent').value;
   var ano=document.getElementById('sel-ano').value;
+  localStorage.setItem('esnl_diario_ano_'+entId, ano);
   setCurrentEntityId(entId);
   var ents=getEntitiesLocal();
   curEnt=ents.find(function(e){return e.id===entId;})||{nome:'Associação',nif:'—',sigla:'—',orgaos:[]};
