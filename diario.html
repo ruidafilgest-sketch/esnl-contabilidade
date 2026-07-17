@@ -17,7 +17,7 @@
 .mbhdr{padding:7px 12px;background:rgba(200,148,58,.05);border-bottom:1px solid var(--border2);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold2);display:flex;align-items:center;gap:6px;font-weight:500}
 .mrow{display:grid;grid-template-columns:1fr 100px;gap:8px;padding:10px 12px;align-items:end}
 .cwrap{position:relative}
-.cdrop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--navy3);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:100;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none}
+.cdrop{position:fixed;background:var(--navy3);border:1px solid var(--border);border-radius:8px;max-height:200px;overflow-y:auto;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,.5);display:none}
 .cdrop::-webkit-scrollbar{width:3px}
 .cdi{padding:8px 12px;cursor:pointer;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.03)}
 .cdi:hover{background:rgba(200,148,58,.1)}
@@ -111,7 +111,7 @@
             <div class="fgroup" style="margin:0"><label class="flabel">Data</label><input type="date" class="finput" id="f-data"></div>
             <div class="fgroup" style="margin:0"><label class="flabel">N.º documento</label><input class="finput" id="f-doc" placeholder="FT 2025/001"></div>
           </div>
-          <div class="fgroup"><label class="flabel">Descrição</label><input class="finput" id="f-desc" placeholder="Ex: Pagamento seguro multiriscos"></div>
+          <div class="fgroup"><label class="flabel">Descrição</label><input class="finput" id="f-desc" oninput="updBal()" placeholder="Ex: Pagamento seguro multiriscos"></div>
           <div class="movbox">
             <div class="mbhdr"><span style="width:8px;height:8px;border-radius:50%;background:var(--red);display:inline-block"></span>Débito</div>
             <div class="mrow">
@@ -152,6 +152,7 @@
             <span class="bbval" id="bval">0,00 €</span>
           </div>
           <button class="btn-primary" id="btn-grav" onclick="gravar()" disabled style="width:100%">Gravar lançamento</button>
+          <div id="grav-hint" style="text-align:center;margin-top:6px;font-size:11px;color:var(--amber)"></div>
           <div style="text-align:center;margin-top:8px"><button class="btn-secondary" style="font-size:12px;padding:6px 14px" onclick="limpar()">Limpar</button></div>
         </div>
       </div>
@@ -772,6 +773,15 @@ function reloadJournal(){
   });
 }
 
+function posicionarDropdown(side){
+  var input=document.getElementById(side+'-s');
+  var drop=document.getElementById(side+'-d');
+  var r=input.getBoundingClientRect();
+  drop.style.left=r.left+'px';
+  drop.style.width=r.width+'px';
+  drop.style.top=(r.bottom+4)+'px';
+}
+
 function doSearch(side,q){
   var drop=document.getElementById(side+'-d');
   if(!q.trim()){drop.style.display='none';return;}
@@ -784,7 +794,7 @@ function doSearch(side,q){
       +'<span class="cdc">'+c.c+'</span><span class="cdn">'+c.n+'</span>'
       +'<span class="cdt '+c.t+'">'+c.t+'</span></div>';
   });
-  drop.innerHTML=html; drop.style.display='block';
+  drop.innerHTML=html; posicionarDropdown(side); drop.style.display='block';
 }
 function pickOnEnter(ev,side){
   if(ev.key!=='Enter') return;
@@ -797,7 +807,23 @@ function pickOnEnter(ev,side){
   }
 }
 function openCD(s){doSearch(s,document.getElementById(s+'-s').value);}
-function closeCD(s){setTimeout(function(){document.getElementById(s+'-d').style.display='none';},200);}
+function closeCD(side){
+  setTimeout(function(){
+    document.getElementById(side+'-d').style.display='none';
+    // Se saiu do campo sem clicar numa sugestão, tenta reconhecer automaticamente
+    // pelo texto escrito (código ou nome exato/único).
+    var atual=(side==='deb')?debC:crdC;
+    var val=document.getElementById(side+'-s').value.trim();
+    var jaEstaCorreto = atual && val.indexOf(atual.c+' — ')===0;
+    if(val && !jaEstaCorreto){
+      var res=searchContas(val);
+      if(res.length>=1){
+        selC(side,res[0].c,res[0].n,res[0].t);
+      }
+    }
+    updBal();
+  },200);
+}
 
 function selC(side,code,name,type){
   if(side==='deb') debC={c:code,n:name,t:type};
@@ -829,9 +855,21 @@ function updBal(){
   var diff=Math.abs(dv-cv);
   var bar=document.getElementById('bbar');
   var btn=document.getElementById('btn-grav');
-  if(dv===0&&cv===0){bar.className='bbar bb-z';document.getElementById('btxt').textContent='Débito = Crédito';document.getElementById('bval').textContent='0,00 €';btn.disabled=true;}
-  else if(diff<0.005){bar.className='bbar bb-ok';document.getElementById('btxt').textContent='✓ Equilibrado';document.getElementById('bval').textContent=fmt(dv)+' €';btn.disabled=!(debC&&crdC&&document.getElementById('f-desc').value.trim());}
-  else{bar.className='bbar bb-nok';document.getElementById('btxt').textContent='Diferença';document.getElementById('bval').textContent=fmt(diff)+' €';btn.disabled=true;}
+  var hint=document.getElementById('grav-hint');
+  var faltam=[];
+  if(!debC) faltam.push('conta de débito');
+  if(!crdC) faltam.push('conta de crédito');
+  if(!document.getElementById('f-desc').value.trim()) faltam.push('descrição');
+  if(dv===0&&cv===0){
+    bar.className='bbar bb-z';document.getElementById('btxt').textContent='Débito = Crédito';document.getElementById('bval').textContent='0,00 €';btn.disabled=true;
+  } else if(diff<0.005){
+    bar.className='bbar bb-ok';document.getElementById('btxt').textContent='✓ Equilibrado';document.getElementById('bval').textContent=fmt(dv)+' €';
+    btn.disabled = faltam.length>0;
+  } else {
+    bar.className='bbar bb-nok';document.getElementById('btxt').textContent='Diferença';document.getElementById('bval').textContent=fmt(diff)+' €';btn.disabled=true;
+    faltam.unshift('valores iguais em débito e crédito');
+  }
+  if(hint) hint.textContent = faltam.length ? ('Falta: '+faltam.join(', ')) : '';
 }
 
 function gravar(){
