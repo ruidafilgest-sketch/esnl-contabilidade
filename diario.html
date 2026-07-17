@@ -718,9 +718,19 @@ function searchContas(query) {
 if(!requireAuth()) {}
 document.getElementById('sidebar-wrap').innerHTML = buildSidebar('diario');
 document.getElementById('f-data').value = hojeISO();
-document.getElementById('f-mes').value = hojeISO().substring(0,7);
+// Filtro de mês começa vazio (sem filtro) para mostrar TODOS os lançamentos do ano selecionado.
+// Anteriormente ficava fixo no mês real atual, o que escondia lançamentos de anos/meses anteriores.
+document.getElementById('f-mes').value = '';
 
 var debC=null, crdC=null, curEnt=getCurrentEntityId(), allLancs=[], nextNum=1;
+
+// Recorda o último ano selecionado no Diário (por entidade), para não voltar sempre a 2025
+function getSavedAno(entId){
+  return localStorage.getItem('esnl_diario_ano_'+entId) || document.getElementById('sel-ano').value;
+}
+function saveAno(entId,ano){
+  localStorage.setItem('esnl_diario_ano_'+entId, ano);
+}
 
 onFirebaseReady(function(){
   loadEntities(function(arr){
@@ -732,14 +742,24 @@ onFirebaseReady(function(){
       sel.appendChild(o);
     });
     if(!curEnt && arr.length){ curEnt=arr[0].id; setCurrentEntityId(curEnt); }
+    // Restaura o ano guardado para esta entidade (se existir)
+    var savedAno=getSavedAno(curEnt);
+    var selAno=document.getElementById('sel-ano');
+    if(savedAno) selAno.value=savedAno;
     reloadJournal();
   });
 });
 
-function onEntChange(id){ curEnt=id; setCurrentEntityId(id); reloadJournal(); }
+function onEntChange(id){
+  curEnt=id; setCurrentEntityId(id);
+  var savedAno=getSavedAno(curEnt);
+  if(savedAno) document.getElementById('sel-ano').value=savedAno;
+  reloadJournal();
+}
 
 function reloadJournal(){
   var ano=document.getElementById('sel-ano').value;
+  saveAno(curEnt,ano);
   document.getElementById('jcont').innerHTML='<div style="padding:30px;text-align:center;color:var(--silver)"><span class="spin"></span>A carregar...</div>';
   loadDiario(curEnt,ano,function(lancs){
     allLancs=lancs;
