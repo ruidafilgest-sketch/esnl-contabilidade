@@ -67,7 +67,7 @@
       </div>
     </div>
     <div class="toolbar no-print">
-      <select id="sel-ent" class="tsel" onchange="loadData()"></select>
+      <select id="sel-ent" class="tsel" onchange="onEntChangeReport(this.value)"></select>
       <select id="sel-ano" class="tsel" onchange="loadData()"><option>2030</option>
 <option>2029</option>
 <option>2028</option>
@@ -617,11 +617,14 @@ function getContaByCode(code) {
   return PLANO_CONTAS.find(c => c.c === code);
 }
 
+function _semAcentos(s){
+  return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
 function searchContas(query) {
-  const q = query.toLowerCase().trim();
+  const q = _semAcentos(query.toLowerCase().trim());
   if (!q) return [];
   return PLANO_CONTAS.filter(c =>
-    c.c.startsWith(q) || c.n.toLowerCase().includes(q)
+    c.c.startsWith(q) || _semAcentos(c.n.toLowerCase()).includes(q)
   ).slice(0, 40);
 }
 </script>
@@ -641,14 +644,25 @@ onFirebaseReady(function(){
       if(e.id===cur)o.selected=true;
       sel.appendChild(o);
     });
-    if(!cur&&arr.length)setCurrentEntityId(arr[0].id);
+    if(!cur&&arr.length){cur=arr[0].id;setCurrentEntityId(arr[0].id);}
+    // Usa o mesmo ano selecionado no Diário para esta entidade
+    var savedAno=localStorage.getItem('esnl_diario_ano_'+cur);
+    if(savedAno) document.getElementById('sel-ano').value=savedAno;
     loadData();
   });
 });
 
+function onEntChangeReport(ent){
+  setCurrentEntityId(ent);
+  var savedAno=localStorage.getItem('esnl_diario_ano_'+ent);
+  if(savedAno) document.getElementById('sel-ano').value=savedAno;
+  loadData();
+}
+
 function loadData(){
   var ent=document.getElementById('sel-ent').value;
   var ano=document.getElementById('sel-ano').value;
+  localStorage.setItem('esnl_diario_ano_'+ent, ano);
   var anoPrev=String(parseInt(ano)-1);
   setCurrentEntityId(ent);
   var selEl=document.getElementById('sel-ent');
