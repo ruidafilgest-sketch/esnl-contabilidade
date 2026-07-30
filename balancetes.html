@@ -695,6 +695,11 @@ onFirebaseReady(function(){
   });
 });
 
+function verMovimentosConta(conta){
+  var ano=document.getElementById('sel-ano').value;
+  window.location.href='diario.html?conta='+encodeURIComponent(conta)+'&ano='+encodeURIComponent(ano);
+}
+
 function onEntChangeReport(ent){
   setCurrentEntityId(ent);
   var savedAno=localStorage.getItem('esnl_diario_ano_'+ent);
@@ -815,8 +820,8 @@ function renderSimples(s){
     }
     gD+=salD;gC+=salC;
     var zer=Math.abs(sal)<0.01;
-    html+='<tr class="conta-row'+(zer?' tr-zer':'')+'" data-conta="'+p.c+'" data-nome="'+p.n.toLowerCase()+'">'
-      +'<td><span class="cc">'+p.c+'</span></td>'
+    html+='<tr class="conta-row'+(zer?' tr-zer':'')+'" data-conta="'+p.c+'" data-nome="'+p.n.toLowerCase()+'" style="cursor:pointer" title="Clicar para ver todos os lançamentos desta conta no Diário" onclick="verMovimentosConta(\''+p.c+'\')">'
+      +'<td><span class="cc">'+p.c+'</span> 🔍</td>'
       +'<td style="font-size:13px">'+p.n+(invertido?' <span title="Saldo do lado contrário ao normal desta conta — confirmar se foi intencional (ex: estorno/retificação) ou engano" style="color:var(--amber)">⚠ invertido</span>':'')+'</td>'
       +'<td><span class="tb '+p.t+'">'+p.t+'</span></td>'
       +'<td class="'+(salD>0.005?'vd':'vz')+(invertido&&salD>0.005?' amber':'')+'">'+(salD>0.005?fmt(salD):'—')+'</td>'
