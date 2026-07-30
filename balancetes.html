@@ -654,7 +654,8 @@ const SETOR_CONTA_MAP = {
 };
 
 function getContaByCode(code) {
-  return PLANO_CONTAS.find(c => c.c === code);
+  var k = String(code==null?'':code).trim();
+  return PLANO_CONTAS.find(c => c.c === k);
 }
 
 function _semAcentos(s){
