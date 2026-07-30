@@ -694,11 +694,16 @@ function loadData(){
   });
 }
 
+function _tipoOficial(conta){
+  var p=PLANO_CONTAS.find(function(x){return x.c===conta;});
+  return p?p.t:null;
+}
+
 function calcS(lancs){
   var s={};
   lancs.forEach(function(l){
     (l.movimentos||[]).forEach(function(m){
-      if(!s[m.conta])s[m.conta]={D:0,C:0,tipo:m.tipo,nome:m.nome};
+      if(!s[m.conta])s[m.conta]={D:0,C:0,tipo:_tipoOficial(m.conta)||m.tipo,nome:m.nome};
       if(m.dc==='D')s[m.conta].D+=m.valor;else s[m.conta].C+=m.valor;
     });
   });
@@ -710,7 +715,7 @@ function gV(contas,s){
   contas.forEach(function(c){
     var sv=s[c];if(!sv)return;
     var diff=sv.D-sv.C;
-    var tp=sv.tipo||'';
+    var tp=_tipoOficial(c)||sv.tipo||'';
     if(['gasto','ativo','caixa'].includes(tp))t+=diff;else t+=-diff;
   });
   return Math.abs(t);
