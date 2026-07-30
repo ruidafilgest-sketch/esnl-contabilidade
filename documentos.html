@@ -63,10 +63,12 @@
 @keyframes sp{to{transform:rotate(360deg)}}
 @media print{
   @page{size:A4;margin:12mm}
-  html,body{background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  html,body{background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important;height:auto!important;overflow:visible!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
   .sidebar,.topbar,.dsb,.dtb,.no-print,.spin{display:none!important}
-  .layout{display:block}
+  .layout{display:block!important;height:auto!important;overflow:visible!important}
+  .dmain{overflow:visible!important;height:auto!important}
+  .darea{overflow:visible!important;height:auto!important;max-width:100%;padding:0}
   .rdoc{box-shadow:none;border-radius:0;border:1px solid #ccc}
   .rdoc-hdr{page-break-inside:avoid;page-break-after:avoid}
   .rtab{width:100%}
@@ -664,7 +666,8 @@ const SETOR_CONTA_MAP = {
 };
 
 function getContaByCode(code) {
-  return PLANO_CONTAS.find(c => c.c === code);
+  var k = String(code==null?'':code).trim();
+  return PLANO_CONTAS.find(c => c.c === k);
 }
 
 function _semAcentos(s){
