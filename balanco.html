@@ -696,7 +696,8 @@ function loadData(){
 }
 
 function _tipoOficial(conta){
-  var p=PLANO_CONTAS.find(function(x){return x.c===conta;});
+  var k=String(conta==null?'':conta).trim();
+  var p=PLANO_CONTAS.find(function(x){return x.c===k;});
   return p?p.t:null;
 }
 
@@ -795,7 +796,7 @@ function renderBalanco(){
         if(c==='_res'){t+=resultado*sn;return;}
         var sv2=sv[c];if(!sv2)return;
         var diff=sv2.D-sv2.C;
-        var tp=sv2.tipo||'';
+        var tp=_tipoOficial(c)||sv2.tipo||'';
         var v=(['gasto','ativo','caixa'].includes(tp)?diff:-diff);
         t+=Math.abs(v)*sn;
       });
@@ -807,7 +808,7 @@ function renderBalanco(){
       if(c==='_res'){t+=resultado;return;}
       var sv2=sv[c];if(!sv2)return;
       var diff=sv2.D-sv2.C;
-      var tp=sv2.tipo||'';
+      var tp=_tipoOficial(c)||sv2.tipo||'';
       var v=['gasto','ativo','caixa'].includes(tp)?diff:-diff;
       t+=Math.abs(v)*l.sinal;
     });
@@ -894,7 +895,7 @@ function renderDRN(){
       (l.refs||[]).forEach(function(c){
         var sv2=sv[c];if(!sv2)return;
         var diff=sv2.D-sv2.C;
-        var tp=sv2.tipo||'';
+        var tp=_tipoOficial(c)||sv2.tipo||'';
         var v=['gasto','ativo','caixa'].includes(tp)?diff:-diff;
         t+=Math.abs(v);
       });
@@ -905,7 +906,7 @@ function renderDRN(){
     l.contas.forEach(function(c){
       var sv2=sv[c];if(!sv2)return;
       var diff=sv2.D-sv2.C;
-      var tp=sv2.tipo||'';
+      var tp=_tipoOficial(c)||sv2.tipo||'';
       var v=['gasto','ativo','caixa'].includes(tp)?diff:-diff;
       t+=Math.abs(v)*l.sinal;
     });
