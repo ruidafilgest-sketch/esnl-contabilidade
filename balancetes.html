@@ -300,8 +300,9 @@ function calcResultadoFromLancs(lancs) {
       var v = m.dc==='D' ? m.valor : -m.valor;
       if (m.conta && m.conta.startsWith('11')) caixa += v;
       if (m.conta && (m.conta.startsWith('12')||m.conta.startsWith('13'))) banco += v;
-      if (m.dc==='D' && m.tipo==='gasto') gasto += m.valor;
-      if (m.dc==='C' && m.tipo==='rendimento') rend += m.valor;
+      var _tp=(getContaByCode(m.conta)||{}).t||m.tipo;
+      if (m.dc==='D' && _tp==='gasto') gasto += m.valor;
+      if (m.dc==='C' && _tp==='rendimento') rend += m.valor;
     });
   });
   return { rend:rend, gasto:gasto, resultado:rend-gasto, caixa:Math.max(caixa,0), banco:Math.max(banco,0) };
@@ -728,7 +729,7 @@ function calcSaldosFromLancs(lancs,periodo){
   lancs.forEach(function(l){
     if(periodo&&periodo!=='anual'){var m=(l.data||'').substring(5,7);if(m!==periodo)return;}
     (l.movimentos||[]).forEach(function(m){
-      if(!s[m.conta])s[m.conta]={D:0,C:0,tipo:m.tipo,nome:m.nome};
+      if(!s[m.conta])s[m.conta]={D:0,C:0,tipo:(getContaByCode(m.conta)||{}).t||m.tipo,nome:m.nome};
       if(m.dc==='D')s[m.conta].D+=m.valor;else s[m.conta].C+=m.valor;
     });
   });
