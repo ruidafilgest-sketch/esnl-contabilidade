@@ -789,7 +789,26 @@ function renderSimples(s){
   html+='<tr class="tr-tot"><td colspan="3" style="font-family:Cormorant Garamond,serif;font-size:14px">Total geral</td>'
     +'<td class="mn" style="color:var(--red);font-size:14px">'+fmt(gD)+' €</td>'
     +'<td class="mn" style="color:var(--green);font-size:14px">'+fmt(gC)+' €</td>'
-    +'</tr></tbody></table>';
+    +'</tr>';
+  // Contas com movimentos mas que não constam do plano de contas oficial —
+  // antes desapareciam em silêncio; agora ficam visíveis para se poder corrigir.
+  var codigosConhecidos={}; plano.forEach(function(p){codigosConhecidos[p.c]=true;});
+  var orfaos=Object.keys(s).filter(function(c){return !codigosConhecidos[c];});
+  if(orfaos.length){
+    html+='<tr class="tr-sec"><td colspan="5"><span style="font-family:Cormorant Garamond,serif;font-size:14px;font-weight:600;color:var(--red)">⚠ Contas não reconhecidas no plano (verificar código)</span></td></tr>';
+    orfaos.forEach(function(c){
+      var sv=s[c];
+      var sal=sv.D-sv.C;
+      html+='<tr class="conta-row" data-conta="'+c+'" data-nome="'+((sv.nome||'').toLowerCase())+'">'
+        +'<td><span class="cc" style="color:var(--red)">'+c+'</span></td>'
+        +'<td style="font-size:13px">'+(sv.nome||'(sem nome)')+'</td>'
+        +'<td><span class="tb '+(sv.tipo||'')+'">'+(sv.tipo||'?')+'</span></td>'
+        +'<td class="'+(sal>0.005?'vd':'vz')+'">'+(sal>0.005?fmt(sal):'—')+'</td>'
+        +'<td class="'+(sal<-0.005?'vc':'vz')+'">'+(sal<-0.005?fmt(-sal):'—')+'</td>'
+        +'</tr>';
+    });
+  }
+  html+='</tbody></table>';
   return html;
 }
 
