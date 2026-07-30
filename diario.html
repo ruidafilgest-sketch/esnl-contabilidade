@@ -161,6 +161,7 @@
           <span class="jtit">Diário geral</span>
           <input type="month" class="jfi" id="f-mes" onchange="reloadJournal()">
           <input class="jfi" id="f-q" placeholder="Pesquisar..." oninput="filterJournal()" style="width:120px">
+          <button class="btn-secondary no-print" style="font-size:11px;padding:5px 10px" onclick="migrarConta('11','111','Caixa central')">🔄 Migrar 11 → 111</button>
           <span class="pill pill-d" id="pd">D 0,00</span>
           <span class="pill pill-c" id="pc">C 0,00</span>
         </div>
@@ -910,6 +911,49 @@ function gravar(){
     } else { showToast('Erro: '+err,'error'); btn.disabled=false; }
   });
 }
+
+function migrarConta(deCode,paraCode,paraNome){
+  var afetados=allLancs.filter(function(l){
+    return (l.movimentos||[]).some(function(m){return m.conta===deCode;});
+  });
+  if(!afetados.length){
+    showToast('Nenhum lançamento com a conta '+deCode+' encontrado neste ano/entidade.');
+    return;
+  }
+  var totalD=0,totalC=0;
+  afetados.forEach(function(l){
+    (l.movimentos||[]).forEach(function(m){
+      if(m.conta===deCode){ if(m.dc==='D')totalD+=m.valor; else totalC+=m.valor; }
+    });
+  });
+  var msg='Encontrados '+afetados.length+' lançamentos com a conta '+deCode+' (total D '+fmt(totalD)+' € / C '+fmt(totalC)+' €).\n\n'
+    +'Vão passar todos a usar a conta '+paraCode+' — '+paraNome+', mantendo a mesma data, descrição e valores.\n\n'
+    +'Confirmas a migração?';
+  if(!confirm(msg)) return;
+
+  var ano=document.getElementById('sel-ano').value;
+  var i=0;
+  function proximo(){
+    if(i>=afetados.length){
+      showToast('✓ Migração concluída: '+afetados.length+' lançamentos atualizados.');
+      reloadJournal();
+      return;
+    }
+    var l=afetados[i];
+    (l.movimentos||[]).forEach(function(m){
+      if(m.conta===deCode){ m.conta=paraCode; m.nome=paraNome; }
+    });
+    saveLancamento(curEnt,ano,l,function(err){
+      if(err) console.error('Erro a migrar lançamento',l.fbKey,err);
+      i++;
+      proximo();
+    });
+  }
+  showToast('A migrar '+afetados.length+' lançamentos...');
+  proximo();
+}
+
+function migrarConta11to111(){ migrarConta('11','111','Caixa central'); }
 
 function limpar(){
   ['f-desc','f-doc','deb-s','crd-s','deb-v','crd-v'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
