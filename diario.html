@@ -912,9 +912,13 @@ function gravar(){
   });
 }
 
+function _contaIgual(a,b){
+  return String(a==null?'':a).trim() === String(b==null?'':b).trim();
+}
+
 function migrarConta(deCode,paraCode,paraNome){
   var afetados=allLancs.filter(function(l){
-    return (l.movimentos||[]).some(function(m){return m.conta===deCode;});
+    return (l.movimentos||[]).some(function(m){return _contaIgual(m.conta,deCode);});
   });
   if(!afetados.length){
     showToast('Nenhum lançamento com a conta '+deCode+' encontrado neste ano/entidade.');
@@ -923,7 +927,7 @@ function migrarConta(deCode,paraCode,paraNome){
   var totalD=0,totalC=0;
   afetados.forEach(function(l){
     (l.movimentos||[]).forEach(function(m){
-      if(m.conta===deCode){ if(m.dc==='D')totalD+=m.valor; else totalC+=m.valor; }
+      if(_contaIgual(m.conta,deCode)){ if(m.dc==='D')totalD+=m.valor; else totalC+=m.valor; }
     });
   });
   var msg='Encontrados '+afetados.length+' lançamentos com a conta '+deCode+' (total D '+fmt(totalD)+' € / C '+fmt(totalC)+' €).\n\n'
@@ -941,7 +945,7 @@ function migrarConta(deCode,paraCode,paraNome){
     }
     var l=afetados[i];
     (l.movimentos||[]).forEach(function(m){
-      if(m.conta===deCode){ m.conta=paraCode; m.nome=paraNome; }
+      if(_contaIgual(m.conta,deCode)){ m.conta=paraCode; m.nome=paraNome; }
     });
     saveLancamento(curEnt,ano,l,function(err){
       if(err) console.error('Erro a migrar lançamento',l.fbKey,err);
@@ -966,7 +970,7 @@ function renderJournal(){
   var d=allLancs.filter(function(l){
     if(mes&&!(l.data||'').startsWith(mes)) return false;
     if(contaFiltroExata){
-      var temConta=(l.movimentos||[]).some(function(m){return m.conta===contaFiltroExata;});
+      var temConta=(l.movimentos||[]).some(function(m){return _contaIgual(m.conta,contaFiltroExata);});
       if(!temConta) return false;
     }
     if(q){var h=((l.desc||'')+(l.doc||'')+(l.movimentos||[]).map(function(m){return m.conta+m.nome;}).join('')).toLowerCase();if(!h.includes(q))return false;}
@@ -982,8 +986,8 @@ function renderJournal(){
     // e um resumo agrupado por contrapartida, para ver logo onde está o volume/anomalia.
     var porContrapartida={};
     d.forEach(function(l){
-      var movConta=(l.movimentos||[]).find(function(m){return m.conta===contaFiltroExata;});
-      var outro=(l.movimentos||[]).find(function(m){return m.conta!==contaFiltroExata;});
+      var movConta=(l.movimentos||[]).find(function(m){return _contaIgual(m.conta,contaFiltroExata);});
+      var outro=(l.movimentos||[]).find(function(m){return !_contaIgual(m.conta,contaFiltroExata);});
       l._valorConta=movConta?movConta.valor:0;
       l._dcConta=movConta?movConta.dc:'';
       if(outro){
