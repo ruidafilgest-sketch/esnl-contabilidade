@@ -728,12 +728,27 @@ document.getElementById('f-mes').value = '';
 
 var debC=null, crdC=null, curEnt=getCurrentEntityId(), allLancs=[], nextNum=1;
 
+// Filtro exato de conta, vindo de um clique no Balancete (?conta=11&ano=2025)
+var _params=new URLSearchParams(window.location.search);
+var contaFiltroExata=_params.get('conta')||null;
+var anoFiltroURL=_params.get('ano')||null;
+
 // Recorda o último ano selecionado no Diário (por entidade), para não voltar sempre a 2025
 function getSavedAno(entId){
   return localStorage.getItem('esnl_diario_ano_'+entId) || document.getElementById('sel-ano').value;
 }
 function saveAno(entId,ano){
   localStorage.setItem('esnl_diario_ano_'+entId, ano);
+}
+
+function limparFiltroConta(){
+  contaFiltroExata=null;
+  var url=new URL(window.location.href);
+  url.searchParams.delete('conta');
+  window.history.replaceState({},'',url);
+  var av=document.getElementById('aviso-filtro-conta');
+  if(av) av.remove();
+  renderJournal();
 }
 
 onFirebaseReady(function(){
@@ -746,10 +761,14 @@ onFirebaseReady(function(){
       sel.appendChild(o);
     });
     if(!curEnt && arr.length){ curEnt=arr[0].id; setCurrentEntityId(curEnt); }
-    // Restaura o ano guardado para esta entidade (se existir)
-    var savedAno=getSavedAno(curEnt);
+    // Restaura o ano guardado para esta entidade (se existir), ou usa o vindo da URL
+    var savedAno=anoFiltroURL||getSavedAno(curEnt);
     var selAno=document.getElementById('sel-ano');
     if(savedAno) selAno.value=savedAno;
+    if(contaFiltroExata){
+      var jc=document.getElementById('jcont');
+      if(jc) jc.insertAdjacentHTML('beforebegin','<div id="aviso-filtro-conta" style="background:rgba(200,148,58,.1);border:1px solid var(--gold);border-radius:8px;padding:8px 14px;margin-bottom:10px;font-size:12px;display:flex;align-items:center;gap:10px">🔍 A mostrar só lançamentos da conta <b>'+contaFiltroExata+'</b> <button class="btn-secondary" style="font-size:11px;padding:3px 10px" onclick="limparFiltroConta()">Ver todos</button></div>');
+    }
     reloadJournal();
   });
 });
@@ -902,12 +921,51 @@ function renderJournal(){
   var q=(document.getElementById('f-q').value||'').toLowerCase();
   var d=allLancs.filter(function(l){
     if(mes&&!(l.data||'').startsWith(mes)) return false;
+    if(contaFiltroExata){
+      var temConta=(l.movimentos||[]).some(function(m){return m.conta===contaFiltroExata;});
+      if(!temConta) return false;
+    }
     if(q){var h=((l.desc||'')+(l.doc||'')+(l.movimentos||[]).map(function(m){return m.conta+m.nome;}).join('')).toLowerCase();if(!h.includes(q))return false;}
     return true;
   });
   var cont=document.getElementById('jcont');
   if(!d.length){cont.innerHTML='<div style="text-align:center;padding:50px;color:var(--silver)"><div style="font-size:32px;opacity:.25;margin-bottom:10px">📒</div><div style="font-family:Cormorant Garamond,serif;font-size:18px;color:var(--text2)">Diário vazio</div></div>';
     document.getElementById('pd').textContent='D 0,00';document.getElementById('pc').textContent='C 0,00';return;}
+
+  var resumoHtml='';
+  if(contaFiltroExata){
+    // Valor do movimento da própria conta filtrada, para ordenar do maior para o menor
+    // e um resumo agrupado por contrapartida, para ver logo onde está o volume/anomalia.
+    var porContrapartida={};
+    d.forEach(function(l){
+      var movConta=(l.movimentos||[]).find(function(m){return m.conta===contaFiltroExata;});
+      var outro=(l.movimentos||[]).find(function(m){return m.conta!==contaFiltroExata;});
+      l._valorConta=movConta?movConta.valor:0;
+      l._dcConta=movConta?movConta.dc:'';
+      if(outro){
+        var k=outro.conta+' — '+outro.nome;
+        if(!porContrapartida[k])porContrapartida[k]={D:0,C:0,n:0};
+        porContrapartida[k].n++;
+        if(movConta){ if(movConta.dc==='D')porContrapartida[k].D+=movConta.valor; else porContrapartida[k].C+=movConta.valor; }
+      }
+    });
+    d.sort(function(a,b){return (b._valorConta||0)-(a._valorConta||0);});
+    var linhas=Object.keys(porContrapartida).map(function(k){return {k:k,v:porContrapartida[k]};});
+    linhas.sort(function(a,b){return Math.abs(b.v.D-b.v.C)-Math.abs(a.v.D-a.v.C);});
+    resumoHtml='<div style="background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:10px 14px;margin-bottom:10px">'
+      +'<div style="font-size:11px;color:var(--silver);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Resumo por contrapartida (ordenado pela maior diferença D/C)</div>'
+      +'<table style="width:100%;font-size:12px;border-collapse:collapse">'
+      +linhas.map(function(r){
+        var diff=r.v.D-r.v.C;
+        return '<tr><td style="padding:3px 6px">'+r.k+'</td>'
+          +'<td style="padding:3px 6px;color:var(--silver)">'+r.v.n+' lanç.</td>'
+          +'<td style="padding:3px 6px;text-align:right;font-family:JetBrains Mono,monospace">D '+fmt(r.v.D)+'</td>'
+          +'<td style="padding:3px 6px;text-align:right;font-family:JetBrains Mono,monospace">C '+fmt(r.v.C)+'</td>'
+          +'<td style="padding:3px 6px;text-align:right;font-family:JetBrains Mono,monospace;font-weight:600;color:'+(Math.abs(diff)>0.005?'var(--amber)':'var(--silver)')+'">Δ '+fmt(diff)+'</td></tr>';
+      }).join('')
+      +'</table></div>';
+  }
+
   var tD=0,tC=0,html='';
   d.forEach(function(l){
     (l.movimentos||[]).forEach(function(m){if(m.dc==='D')tD+=m.valor;else tC+=m.valor;});
@@ -927,7 +985,7 @@ function renderJournal(){
       +'<div class="lact"><button class="btd" onclick="delLanc(\''+l.fbKey+'\')">Eliminar</button></div>'
       +'</div>';
   });
-  cont.innerHTML=html;
+  cont.innerHTML=resumoHtml+html;
   document.getElementById('pd').textContent='D '+fmt(tD);
   document.getElementById('pc').textContent='C '+fmt(tC);
 }
