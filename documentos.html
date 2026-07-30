@@ -61,7 +61,19 @@
 .rdfoot{padding:12px 32px;background:#f5f7fa;border-top:1px solid #e0e0e0;display:flex;align-items:center;justify-content:space-between;font-size:10px;color:#888;font-family:Outfit,sans-serif}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(200,148,58,.3);border-top-color:var(--gold);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media print{.sidebar,.topbar,.dsb,.dtb,.no-print{display:none!important}.layout{display:block}.rdoc{box-shadow:none;border-radius:0}body{background:#fff}}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  .sidebar,.topbar,.dsb,.dtb,.no-print,.spin{display:none!important}
+  .layout{display:block}
+  .rdoc{box-shadow:none;border-radius:0;border:1px solid #ccc}
+  .rdoc-hdr{page-break-inside:avoid;page-break-after:avoid}
+  .rtab{width:100%}
+  .rtab thead{display:table-header-group}
+  .rtab tr{page-break-inside:avoid}
+  body{background:#fff}
+}
 </style>
 </head>
 <body>
