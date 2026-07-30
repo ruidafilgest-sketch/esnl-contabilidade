@@ -52,7 +52,36 @@
 .eq-err{background:rgba(224,80,80,.12);color:var(--red);border:1px solid rgba(224,80,80,.25)}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(200,148,58,.3);border-top-color:var(--gold);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media print{.sidebar,.topbar,.toolbar,.fbar,.no-print{display:none!important}.app-layout{display:block}body{background:#fff;color:#000}.btable th,.btable td{color:#000!important;border-color:#ddd!important}.tr-sec td{background:#f5f5f5!important}.tr-tot td{background:#efefef!important}}
+@media print{
+  @page{size:A4;margin:14mm 12mm}
+  html,body{background:#fff!important}
+  .sidebar,.topbar,.toolbar,.fbar,.no-print,.spin{display:none!important}
+  .app-layout{display:block}
+  .content{padding:0;overflow:visible}
+  .kcards{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:14px;page-break-inside:avoid}
+  .kc{background:#fff!important;border:1px solid #ccc!important;box-shadow:none!important}
+  .kl{color:#555!important}
+  .kv{color:#000!important}
+  .bwrap{background:#fff!important;border:1px solid #999!important;border-radius:0!important;box-shadow:none!important}
+  .bhdr{background:#f2f2f2!important;border-bottom:1px solid #999!important}
+  .btit{color:#000!important}
+  .bsub{color:#555!important}
+  #eq-badge .eqbadge{border:1px solid #999!important;background:#fff!important;color:#000!important}
+  .btable{width:100%}
+  .btable thead{display:table-header-group}
+  .btable th{background:#eee!important;color:#000!important;border-bottom:1px solid #999!important}
+  .btable td{color:#000!important;border-bottom:1px solid #ddd!important}
+  .btable tr{page-break-inside:avoid}
+  .tr-sec{page-break-after:avoid}
+  .tr-sec td{background:#f0f0f0!important;color:#000!important;border-bottom:1px solid #999!important}
+  .tr-tot td{background:#e5e5e5!important;color:#000!important;border-top:1px solid #333!important}
+  .tr-zer{display:none}
+  .vd,.vc,.mn{color:#000!important}
+  .vz{color:#999!important}
+  .amber{color:#8a6300!important;font-weight:600}
+  .cc{color:#000!important;font-weight:600}
+  .tb{border:1px solid #999!important;background:#fff!important;color:#000!important}
+}
 </style>
 </head>
 <body>
