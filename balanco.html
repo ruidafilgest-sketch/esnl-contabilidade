@@ -52,7 +52,24 @@
 .ascg{font-size:11px;color:#666}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(200,148,58,.3);border-top-color:var(--gold);border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:4px}
 @keyframes sp{to{transform:rotate(360deg)}}
-@media print{.sidebar,.topbar,.toolbar,.vbar,.no-print{display:none!important}.app-layout{display:block}.content{padding:0;max-width:100%}body{background:#fff}.rdoc{box-shadow:none;border-radius:0}}
+@media print{
+  @page{size:A4;margin:12mm}
+  html,body{background:#fff!important;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  .sidebar,.topbar,.toolbar,.vbar,.no-print,.spin{display:none!important}
+  .app-layout{display:block}
+  .content{padding:0;max-width:100%}
+  .rdoc{box-shadow:none;border-radius:0;border:1px solid #ccc}
+  .rdoc-hdr{page-break-inside:avoid;page-break-after:avoid}
+  .bgrid{page-break-inside:auto}
+  .bside{page-break-inside:avoid}
+  .dt{width:100%}
+  .dt thead{display:table-header-group}
+  .dt tr{page-break-inside:avoid}
+  .dt tr.dtot,.dt tr.dres,.dt tr.dresfin{page-break-inside:avoid;page-break-after:avoid}
+  .assin{page-break-inside:avoid}
+  .rdfoot{page-break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -823,8 +840,8 @@ function renderBalanco(){
   var cont=document.getElementById('main-content');
   cont.innerHTML='<div class="vbar '+(eq?'vok':'verr')+' no-print">'
     +(eq?'✓ Balanço equilibrado — Ativo = Fundos Patrimoniais + Passivo'
-        :'⚠ Desequilíbrio: Ativo '+fmt(totalAtivo)+' € ≠ FP+Passivo '+fmt(totalPassivo)+' €')
-    +'<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:12px">'+fmt(totalAtivo)+' € = '+fmt(totalPassivo)+' €</span>'
+        :'⚠ Desequilíbrio: Ativo '+fmt(totalAtivo)+' € ≠ FP+Passivo '+fmt(totalPassivo)+' € (diferença: '+fmt(Math.abs(totalAtivo-totalPassivo))+' €)')
+    +'<span style="margin-left:auto;font-family:JetBrains Mono,monospace;font-size:12px">'+fmt(totalAtivo)+' € '+(eq?'=':'≠')+' '+fmt(totalPassivo)+' €</span>'
     +'</div>'
     +'<div class="rdoc">'
     +'<div class="rdoc-hdr">'
