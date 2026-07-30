@@ -58,7 +58,7 @@
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
   .sidebar,.topbar,.toolbar,.vbar,.no-print,.spin{display:none!important}
   .app-layout{display:block}
-  .content{padding:0;max-width:100%}
+  .content{padding:0;max-width:100%;overflow:visible!important;height:auto!important}
   .rdoc{box-shadow:none;border-radius:0;border:1px solid #ccc}
   .rdoc-hdr{page-break-inside:avoid;page-break-after:avoid}
   .bgrid{page-break-inside:auto}
@@ -631,7 +631,8 @@ const SETOR_CONTA_MAP = {
 };
 
 function getContaByCode(code) {
-  return PLANO_CONTAS.find(c => c.c === code);
+  var k = String(code==null?'':code).trim();
+  return PLANO_CONTAS.find(c => c.c === k);
 }
 
 function _semAcentos(s){
