@@ -751,8 +751,9 @@ function render(){
   var seen=new Set();
   PLANO_CONTAS.filter(function(p){return s[p.c]&&!seen.has(p.c)&&seen.add(p.c);}).forEach(function(p){
     var sal=getSaldo(p.c,s,p.t);
-    if(['gasto','ativo','caixa'].includes(p.t))tD+=Math.max(sal,0);
-    else tC+=Math.max(sal,0);
+    var natD=['gasto','ativo','caixa'].includes(p.t);
+    if(natD){ if(sal>=0)tD+=sal; else tC+=-sal; }
+    else { if(sal>=0)tC+=sal; else tD+=-sal; }
   });
   var eq=Math.abs(tD-tC)<0.01;
   var bd=document.getElementById('eq-badge');
@@ -774,16 +775,23 @@ function renderSimples(s){
       lastCl=p.cl;
     }
     var sal=getSaldo(p.c,s,p.t);
-    var salD=['gasto','ativo','caixa'].includes(p.t)?Math.max(sal,0):0;
-    var salC=['passivo','capital','rendimento'].includes(p.t)?Math.max(sal,0):0;
+    var natD=['gasto','ativo','caixa'].includes(p.t); // conta de natureza devedora
+    var salD, salC, invertido=false;
+    if(natD){
+      if(sal>=0){salD=sal;salC=0;}
+      else{salD=0;salC=-sal;invertido=true;} // saldo do lado contrário — não se perde, mostra-se a credor
+    } else {
+      if(sal>=0){salC=sal;salD=0;}
+      else{salC=0;salD=-sal;invertido=true;} // idem, mostra-se a devedor
+    }
     gD+=salD;gC+=salC;
     var zer=Math.abs(sal)<0.01;
     html+='<tr class="conta-row'+(zer?' tr-zer':'')+'" data-conta="'+p.c+'" data-nome="'+p.n.toLowerCase()+'">'
       +'<td><span class="cc">'+p.c+'</span></td>'
-      +'<td style="font-size:13px">'+p.n+'</td>'
+      +'<td style="font-size:13px">'+p.n+(invertido?' <span title="Saldo do lado contrário ao normal desta conta — confirmar se foi intencional (ex: estorno/retificação) ou engano" style="color:var(--amber)">⚠ invertido</span>':'')+'</td>'
       +'<td><span class="tb '+p.t+'">'+p.t+'</span></td>'
-      +'<td class="'+(salD>0.005?'vd':'vz')+'">'+(salD>0.005?fmt(salD):'—')+'</td>'
-      +'<td class="'+(salC>0.005?'vc':'vz')+'">'+(salC>0.005?fmt(salC):'—')+'</td>'
+      +'<td class="'+(salD>0.005?'vd':'vz')+(invertido&&salD>0.005?' amber':'')+'">'+(salD>0.005?fmt(salD):'—')+'</td>'
+      +'<td class="'+(salC>0.005?'vc':'vz')+(invertido&&salC>0.005?' amber':'')+'">'+(salC>0.005?fmt(salC):'—')+'</td>'
       +'</tr>';
   });
   html+='<tr class="tr-tot"><td colspan="3" style="font-family:Cormorant Garamond,serif;font-size:14px">Total geral</td>'
